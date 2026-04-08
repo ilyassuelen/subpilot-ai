@@ -26,3 +26,14 @@ class ContractResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ContractUpdate(BaseModel):
+    title: str
+    provider_name: str
+    category: str
+    monthly_cost: float
+    start_date: date
+    end_date: date | None = None
+    cancellation_notice_days: int = 30
+    status: str
