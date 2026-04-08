@@ -1,3 +1,5 @@
+from datetime import timedelta, date
+
 from sqlalchemy.orm import Session
 
 from app.models.contract import Contract
@@ -61,3 +63,10 @@ def delete_contract(db: Session, contract_id: int) -> bool:
     db.commit()
 
     return True
+
+
+def calculate_cancellation_deadline(contract: Contract) -> date | None:
+    if not contract.end_date:
+        return None
+
+    return contract.end_date - timedelta(days=contract.cancellation_notice_days)

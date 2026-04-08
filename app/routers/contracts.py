@@ -9,6 +9,7 @@ from app.services.contract_service import (
     get_contract_by_id,
     update_contract,
     delete_contract,
+    calculate_cancellation_deadline,
 )
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
@@ -22,14 +23,23 @@ def get_db():
         db.close()
 
 
+def build_contract_response(contract):
+    contract_dict = ContractResponse.model_validate(contract).model_dump()
+    contract_dict["cancellation_deadline"] = calculate_cancellation_deadline(contract)
+    return contract_dict
+
+
 @router.post("/", response_model=ContractResponse)
 def create_new_contract(contract: ContractCreate, db: Session = Depends(get_db)):
-    return create_contract(db, contract)
+    new_contract = create_contract(db, contract)
+    return build_contract_response(new_contract)
 
 
 @router.get("/", response_model=list[ContractResponse])
 def get_contracts(db: Session = Depends(get_db)):
-    return get_all_contracts(db)
+    contracts = get_all_contracts(db)
+
+    return [build_contract_response(contract) for contract in contracts]
 
 
 @router.get("/{contract_id}", response_model=ContractResponse)
@@ -39,7 +49,7 @@ def get_contract(contract_id: int, db: Session = Depends(get_db)):
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    return contract
+    return build_contract_response(contract)
 
 
 @router.put("/{contract_id}", response_model=ContractResponse)
@@ -53,7 +63,7 @@ def update_existing_contract(
     if not updated_contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    return updated_contract
+    return build_contract_response(updated_contract)
 
 
 @router.delete("/{contract_id}")
