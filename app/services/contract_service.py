@@ -109,3 +109,21 @@ def calculate_urgency_status(contract: Contract) -> str:
         return "warning"
     else:
         return "safe"
+
+
+def get_dashboard_stats(db: Session) -> dict:
+    contracts = get_all_contracts(db)
+
+    total_contracts = len(contracts)
+    active_contracts = len([contract for contract in contracts if contract.status == "active"])
+    critical_contracts = len(
+        [contract for contract in contracts if calculate_urgency_status(contract) == "critical"]
+    )
+    monthly_total_cost = sum(contract.monthly_cost for contract in contracts if contract.status == "active")
+
+    return {
+        "total_contracts": total_contracts,
+        "active_contracts": active_contracts,
+        "critical_contracts": critical_contracts,
+        "monthly_total_cost": round(monthly_total_cost, 2),
+    }
