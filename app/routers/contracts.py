@@ -10,6 +10,7 @@ from app.services.contract_service import (
     update_contract,
     delete_contract,
     calculate_cancellation_deadline,
+    calculate_days_until_deadline,
     get_expiring_contracts,
 )
 
@@ -27,6 +28,7 @@ def get_db():
 def build_contract_response(contract):
     contract_dict = ContractResponse.model_validate(contract).model_dump()
     contract_dict["cancellation_deadline"] = calculate_cancellation_deadline(contract)
+    contract_dict["days_until_deadline"] = calculate_days_until_deadline(contract)
     return contract_dict
 
 

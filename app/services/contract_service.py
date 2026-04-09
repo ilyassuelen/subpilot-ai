@@ -72,6 +72,15 @@ def calculate_cancellation_deadline(contract: Contract) -> date | None:
     return contract.end_date - timedelta(days=contract.cancellation_notice_days)
 
 
+def calculate_days_until_deadline(contract: Contract) -> int | None:
+    cancellation_deadline = calculate_cancellation_deadline(contract)
+
+    if not cancellation_deadline:
+        return None
+
+    return (cancellation_deadline - date.today()).days
+
+
 def get_expiring_contracts(db: Session, days: int = 30) -> list[Contract]:
     today = date.today()
     target_date = today + timedelta(days=days)
