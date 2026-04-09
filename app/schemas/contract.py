@@ -23,6 +23,7 @@ class ContractResponse(BaseModel):
     cancellation_notice_days: int
     cancellation_deadline: date | None = None
     days_until_deadline: int | None = None
+    urgency_status: str
     status: str
     created_at: datetime
 

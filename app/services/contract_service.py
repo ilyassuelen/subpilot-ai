@@ -95,3 +95,17 @@ def get_expiring_contracts(db: Session, days: int = 30) -> list[Contract]:
             expiring_contracts.append(contract)
 
     return expiring_contracts
+
+
+def calculate_urgency_status(contract: Contract) -> str:
+    days = calculate_days_until_deadline(contract)
+
+    if days is None:
+        return "no_deadline"
+
+    if days <= 3:
+        return "critical"
+    elif days <= 14:
+        return "warning"
+    else:
+        return "safe"

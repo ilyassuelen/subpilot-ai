@@ -12,6 +12,7 @@ from app.services.contract_service import (
     calculate_cancellation_deadline,
     calculate_days_until_deadline,
     get_expiring_contracts,
+    calculate_urgency_status,
 )
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
@@ -26,10 +27,23 @@ def get_db():
 
 
 def build_contract_response(contract):
-    contract_dict = ContractResponse.model_validate(contract).model_dump()
-    contract_dict["cancellation_deadline"] = calculate_cancellation_deadline(contract)
-    contract_dict["days_until_deadline"] = calculate_days_until_deadline(contract)
-    return contract_dict
+    contract_dict = {
+        "id": contract.id,
+        "title": contract.title,
+        "provider_name": contract.provider_name,
+        "category": contract.category,
+        "monthly_cost": contract.monthly_cost,
+        "start_date": contract.start_date,
+        "end_date": contract.end_date,
+        "cancellation_notice_days": contract.cancellation_notice_days,
+        "cancellation_deadline": calculate_cancellation_deadline(contract),
+        "days_until_deadline": calculate_days_until_deadline(contract),
+        "urgency_status": calculate_urgency_status(contract),
+        "status": contract.status,
+        "created_at": contract.created_at,
+    }
+
+    return ContractResponse.model_validate(contract_dict)
 
 
 @router.post("/", response_model=ContractResponse)
