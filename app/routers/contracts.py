@@ -10,6 +10,7 @@ from app.services.contract_service import (
     update_contract,
     delete_contract,
     calculate_cancellation_deadline,
+    get_expiring_contracts,
 )
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
@@ -38,6 +39,13 @@ def create_new_contract(contract: ContractCreate, db: Session = Depends(get_db))
 @router.get("/", response_model=list[ContractResponse])
 def get_contracts(db: Session = Depends(get_db)):
     contracts = get_all_contracts(db)
+
+    return [build_contract_response(contract) for contract in contracts]
+
+
+@router.get("/expiring-soon", response_model=list[ContractResponse])
+def get_expiring_soon_contracts(days: int = 30, db: Session = Depends(get_db)):
+    contracts = get_expiring_contracts(db, days)
 
     return [build_contract_response(contract) for contract in contracts]
 

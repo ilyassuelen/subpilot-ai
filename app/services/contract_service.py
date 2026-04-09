@@ -70,3 +70,19 @@ def calculate_cancellation_deadline(contract: Contract) -> date | None:
         return None
 
     return contract.end_date - timedelta(days=contract.cancellation_notice_days)
+
+
+def get_expiring_contracts(db: Session, days: int = 30) -> list[Contract]:
+    today = date.today()
+    target_date = today + timedelta(days=days)
+
+    contracts = get_all_contracts(db)
+    expiring_contracts = []
+
+    for contract in contracts:
+        cancellation_deadline = calculate_cancellation_deadline(contract)
+
+        if cancellation_deadline and today <= cancellation_deadline <= target_date:
+            expiring_contracts.append(contract)
+
+    return expiring_contracts
