@@ -74,6 +74,12 @@ def get_critical_contracts(db: Session = Depends(get_db)):
     return [build_contract_response(contract) for contract in contracts]
 
 
+@router.get("/overdue", response_model=list[ContractResponse])
+def get_overdue_contracts(db: Session = Depends(get_db)):
+    contracts = get_contracts_by_urgency(db, "overdue")
+    return [build_contract_response(contract) for contract in contracts]
+
+
 @router.get("/prioritized", response_model=list[ContractResponse])
 def get_prioritized_contracts_route(db: Session = Depends(get_db)):
     contracts = get_prioritized_contracts(db)
