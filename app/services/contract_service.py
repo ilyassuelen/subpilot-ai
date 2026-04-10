@@ -127,3 +127,13 @@ def get_dashboard_stats(db: Session) -> dict:
         "critical_contracts": critical_contracts,
         "monthly_total_cost": round(monthly_total_cost, 2),
     }
+
+
+def get_contracts_by_urgency(db: Session, urgency_status: str) -> list[Contract]:
+    contracts = get_all_contracts(db)
+
+    return [
+        contract
+        for contract in contracts
+        if calculate_urgency_status(contract) == urgency_status
+    ]

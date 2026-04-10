@@ -13,6 +13,7 @@ from app.services.contract_service import (
     calculate_days_until_deadline,
     get_expiring_contracts,
     calculate_urgency_status,
+    get_contracts_by_urgency,
 )
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
@@ -63,6 +64,12 @@ def get_contracts(db: Session = Depends(get_db)):
 def get_expiring_soon_contracts(days: int = 30, db: Session = Depends(get_db)):
     contracts = get_expiring_contracts(db, days)
 
+    return [build_contract_response(contract) for contract in contracts]
+
+
+@router.get("/critical", response_model=list[ContractResponse])
+def get_critical_contracts(db: Session = Depends(get_db)):
+    contracts = get_contracts_by_urgency(db, "critical")
     return [build_contract_response(contract) for contract in contracts]
 
 
