@@ -103,7 +103,9 @@ def calculate_urgency_status(contract: Contract) -> str:
     if days is None:
         return "no_deadline"
 
-    if days <= 3:
+    if days < 0:
+        return "overdue"
+    elif days <= 3:
         return "critical"
     elif days <= 14:
         return "warning"
@@ -137,3 +139,25 @@ def get_contracts_by_urgency(db: Session, urgency_status: str) -> list[Contract]
         for contract in contracts
         if calculate_urgency_status(contract) == urgency_status
     ]
+
+
+def get_prioritized_contracts(db: Session) -> list[Contract]:
+    contracts = get_all_contracts(db)
+
+    priority_order = {
+        "overdue": 0,
+        "critical": 1,
+        "warning": 2,
+        "safe": 3,
+        "no_deadline": 4,
+    }
+
+    return sorted(
+        contracts,
+        key=lambda contract: (
+            priority_order[calculate_urgency_status(contract)],
+            calculate_days_until_deadline(contract)
+            if calculate_days_until_deadline(contract) is not None
+            else 999999,
+        ),
+    )
