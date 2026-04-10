@@ -10,11 +10,17 @@ def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
     new_contract = Contract(
         title=contract_data.title,
         provider_name=contract_data.provider_name,
+        provider_email=contract_data.provider_email,
         category=contract_data.category,
+        contract_type=contract_data.contract_type,
         monthly_cost=contract_data.monthly_cost,
+        billing_cycle=contract_data.billing_cycle,
+        currency=contract_data.currency,
         start_date=contract_data.start_date,
         end_date=contract_data.end_date,
+        auto_renewal=contract_data.auto_renewal,
         cancellation_notice_days=contract_data.cancellation_notice_days,
+        notes=contract_data.notes,
     )
 
     db.add(new_contract)
@@ -40,12 +46,18 @@ def update_contract(db: Session, contract_id: int, contract_data: ContractUpdate
 
     contract.title = contract_data.title
     contract.provider_name = contract_data.provider_name
+    contract.provider_email = contract_data.provider_email
     contract.category = contract_data.category
+    contract.contract_type = contract_data.contract_type
     contract.monthly_cost = contract_data.monthly_cost
+    contract.billing_cycle = contract_data.billing_cycle
+    contract.currency = contract_data.currency
     contract.start_date = contract_data.start_date
     contract.end_date = contract_data.end_date
+    contract.auto_renewal = contract_data.auto_renewal
     contract.cancellation_notice_days = contract_data.cancellation_notice_days
     contract.status = contract_data.status
+    contract.notes = contract_data.notes
 
     db.commit()
     db.refresh(contract)
