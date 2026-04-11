@@ -23,3 +23,8 @@ class ReminderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ReminderGenerateResponse(BaseModel):
+    generated_count: int
+    reminders: list[ReminderResponse]
