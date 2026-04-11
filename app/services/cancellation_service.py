@@ -4,6 +4,18 @@ from app.models.cancellation import CancellationRequest
 from app.models.contract import Contract
 
 
+def can_transition_cancellation_status(current_status: str, new_status: str) -> bool:
+    """Validate whether a cancellation request is allowed to move to a new status."""
+    allowed_transitions = {
+        "draft": {"approved", "cancelled"},
+        "approved": {"sent", "cancelled"},
+        "sent": set(),
+        "cancelled": set(),
+    }
+
+    return new_status in allowed_transitions.get(current_status, set())
+
+
 def build_cancellation_subject(contract: Contract) -> str:
     """Build a cancellation email subject based on contract details."""
     return f"Cancellation request for {contract.title}"
@@ -98,3 +110,54 @@ def get_cancellation_request_by_id(db: Session, cancellation_id: int) -> Cancell
         .filter(CancellationRequest.id == cancellation_id)
         .first()
     )
+
+
+def approve_cancellation_request(db: Session, cancellation_id: int) -> CancellationRequest | None:
+    """Mark a cancellation request as approved."""
+    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+
+    if not cancellation:
+        return None
+
+    if not can_transition_cancellation_status(cancellation.status, "approved"):
+        return None
+
+    cancellation.status = "approved"
+    db.commit()
+    db.refresh(cancellation)
+
+    return cancellation
+
+
+def mark_cancellation_request_as_sent(db: Session, cancellation_id: int) -> CancellationRequest | None:
+    """Mark a cancellation request as sent."""
+    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+
+    if not cancellation:
+        return None
+
+    if not can_transition_cancellation_status(cancellation.status, "sent"):
+        return None
+
+    cancellation.status = "sent"
+    db.commit()
+    db.refresh(cancellation)
+
+    return cancellation
+
+
+def cancel_cancellation_request(db: Session, cancellation_id: int) -> CancellationRequest | None:
+    """Mark a cancellation request as cancelled."""
+    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+
+    if not cancellation:
+        return None
+
+    if not can_transition_cancellation_status(cancellation.status, "cancelled"):
+        return None
+
+    cancellation.status = "cancelled"
+    db.commit()
+    db.refresh(cancellation)
+
+    return cancellation
