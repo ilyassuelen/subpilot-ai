@@ -7,6 +7,7 @@ from app.core.database import Base
 
 
 class Contract(Base):
+    """Represents a contract or subscription with billing and cancellation details."""
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

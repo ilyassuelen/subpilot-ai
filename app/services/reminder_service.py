@@ -9,6 +9,7 @@ from app.schemas.reminder import ReminderCreate
 
 
 def create_reminder(db: Session, reminder_data: ReminderCreate) -> Reminder:
+    """Create and persist a new reminder in the database."""
     reminder = Reminder(
         contract_id=reminder_data.contract_id,
         reminder_type=reminder_data.reminder_type,
@@ -25,14 +26,17 @@ def create_reminder(db: Session, reminder_data: ReminderCreate) -> Reminder:
 
 
 def get_all_reminders(db: Session) -> list[Reminder]:
+    """Return all reminders stored in the database."""
     return db.query(Reminder).all()
 
 
 def get_reminders_by_contract(db: Session, contract_id: int) -> list[Reminder]:
+    """Return all reminders associated with a specific contract."""
     return db.query(Reminder).filter(Reminder.contract_id == contract_id).all()
 
 
 def update_reminder_statuses(db: Session) -> list[Reminder]:
+    """Mark overdue pending reminders as missed and return the updated reminders."""
     reminders = db.query(Reminder).all()
     now = datetime.utcnow()
 
@@ -52,6 +56,7 @@ def update_reminder_statuses(db: Session) -> list[Reminder]:
 
 
 def generate_default_reminders_for_contract(db: Session, contract: Contract) -> list[Reminder]:
+    """Generate default cancellation reminders for a contract while skipping past dates and duplicates."""
     cancellation_deadline = calculate_cancellation_deadline(contract)
 
     if not cancellation_deadline:

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class ContractCreate(BaseModel):
+    """Schema for creating a new contract."""
     title: str
     provider_name: str
     provider_email: str | None = None
@@ -19,6 +20,7 @@ class ContractCreate(BaseModel):
 
 
 class ContractResponse(BaseModel):
+    """Schema returned by the API for contract data including calculated fields."""
     id: int
     title: str
     provider_name: str
@@ -44,6 +46,7 @@ class ContractResponse(BaseModel):
 
 
 class ContractUpdate(BaseModel):
+    """Schema for updating an existing contract."""
     title: str
     provider_name: str
     provider_email: str | None = None

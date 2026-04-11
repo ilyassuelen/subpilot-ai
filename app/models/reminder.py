@@ -7,6 +7,7 @@ from app.core.database import Base
 
 
 class Reminder(Base):
+    """Represents a scheduled reminder for a contract-related action."""
     __tablename__ = "reminders"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

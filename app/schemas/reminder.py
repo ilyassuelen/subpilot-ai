@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class ReminderCreate(BaseModel):
+    """Schema for creating a new reminder."""
     contract_id: int
     reminder_type: str
     message: str
@@ -11,6 +12,7 @@ class ReminderCreate(BaseModel):
 
 
 class ReminderResponse(BaseModel):
+    """Schema returned by the API for reminder data."""
     id: int
     contract_id: int
     reminder_type: str
@@ -26,5 +28,6 @@ class ReminderResponse(BaseModel):
 
 
 class ReminderGenerateResponse(BaseModel):
+    """Schema returned after generating default reminders for a contract."""
     generated_count: int
     reminders: list[ReminderResponse]

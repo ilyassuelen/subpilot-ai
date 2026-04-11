@@ -7,6 +7,7 @@ from app.schemas.contract import ContractCreate, ContractUpdate
 
 
 def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
+    """Create and persist a new contract in the database."""
     new_contract = Contract(
         title=contract_data.title,
         provider_name=contract_data.provider_name,
@@ -31,14 +32,17 @@ def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
 
 
 def get_all_contracts(db: Session) -> list[Contract]:
+    """Return all contracts stored in the database."""
     return db.query(Contract).all()
 
 
 def get_contract_by_id(db: Session, contract_id: int) -> Contract | None:
+    """Return a single contract by its ID or None if it does not exist."""
     return db.query(Contract).filter(Contract.id == contract_id).first()
 
 
 def update_contract(db: Session, contract_id: int, contract_data: ContractUpdate) -> Contract | None:
+    """Update an existing contract and return it, or None if not found."""
     contract = get_contract_by_id(db, contract_id)
 
     if not contract:
@@ -66,6 +70,7 @@ def update_contract(db: Session, contract_id: int, contract_data: ContractUpdate
 
 
 def delete_contract(db: Session, contract_id: int) -> bool:
+    """Delete a contract by ID and return True on success, otherwise False."""
     contract = get_contract_by_id(db, contract_id)
 
     if not contract:
@@ -78,6 +83,7 @@ def delete_contract(db: Session, contract_id: int) -> bool:
 
 
 def calculate_cancellation_deadline(contract: Contract) -> date | None:
+    """Calculate the cancellation deadline from the contract end date and notice period."""
     if not contract.end_date:
         return None
 
@@ -85,6 +91,7 @@ def calculate_cancellation_deadline(contract: Contract) -> date | None:
 
 
 def calculate_days_until_deadline(contract: Contract) -> int | None:
+    """Return the number of days remaining until the cancellation deadline."""
     cancellation_deadline = calculate_cancellation_deadline(contract)
 
     if not cancellation_deadline:
@@ -94,6 +101,7 @@ def calculate_days_until_deadline(contract: Contract) -> int | None:
 
 
 def get_expiring_contracts(db: Session, days: int = 30) -> list[Contract]:
+    """Return contracts whose cancellation deadline falls within the next given number of days."""
     today = date.today()
     target_date = today + timedelta(days=days)
 
@@ -110,6 +118,7 @@ def get_expiring_contracts(db: Session, days: int = 30) -> list[Contract]:
 
 
 def calculate_urgency_status(contract: Contract) -> str:
+    """Determine the urgency level of a contract based on its cancellation deadline."""
     days = calculate_days_until_deadline(contract)
 
     if days is None:
@@ -126,6 +135,7 @@ def calculate_urgency_status(contract: Contract) -> str:
 
 
 def get_dashboard_stats(db: Session) -> dict:
+    """Calculate dashboard statistics for contracts and monthly costs."""
     contracts = get_all_contracts(db)
 
     total_contracts = len(contracts)
@@ -144,6 +154,7 @@ def get_dashboard_stats(db: Session) -> dict:
 
 
 def get_contracts_by_urgency(db: Session, urgency_status: str) -> list[Contract]:
+    """Return all contracts matching a specific urgency status."""
     contracts = get_all_contracts(db)
 
     return [
@@ -154,6 +165,7 @@ def get_contracts_by_urgency(db: Session, urgency_status: str) -> list[Contract]
 
 
 def get_prioritized_contracts(db: Session) -> list[Contract]:
+    """Return contracts sorted by urgency and nearest deadline."""
     contracts = get_all_contracts(db)
 
     priority_order = {

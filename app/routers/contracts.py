@@ -21,6 +21,7 @@ router = APIRouter(prefix="/contracts", tags=["Contracts"])
 
 
 def get_db():
+    """Provide a database session for each request and close it afterwards."""
     db = SessionLocal()
     try:
         yield db
@@ -29,6 +30,7 @@ def get_db():
 
 
 def build_contract_response(contract):
+    """Build a contract response object including calculated deadline and urgency fields."""
     contract_dict = {
         "id": contract.id,
         "title": contract.title,
@@ -56,12 +58,14 @@ def build_contract_response(contract):
 
 @router.post("/", response_model=ContractResponse)
 def create_new_contract(contract: ContractCreate, db: Session = Depends(get_db)):
+    """Create a new contract and return the saved contract data."""
     new_contract = create_contract(db, contract)
     return build_contract_response(new_contract)
 
 
 @router.get("/", response_model=list[ContractResponse])
 def get_contracts(db: Session = Depends(get_db)):
+    """Return all contracts with calculated response fields."""
     contracts = get_all_contracts(db)
 
     return [build_contract_response(contract) for contract in contracts]
@@ -69,6 +73,7 @@ def get_contracts(db: Session = Depends(get_db)):
 
 @router.get("/expiring-soon", response_model=list[ContractResponse])
 def get_expiring_soon_contracts(days: int = 30, db: Session = Depends(get_db)):
+    """Return contracts whose cancellation deadline is approaching within the given number of days."""
     contracts = get_expiring_contracts(db, days)
 
     return [build_contract_response(contract) for contract in contracts]
@@ -76,24 +81,28 @@ def get_expiring_soon_contracts(days: int = 30, db: Session = Depends(get_db)):
 
 @router.get("/critical", response_model=list[ContractResponse])
 def get_critical_contracts(db: Session = Depends(get_db)):
+    """Return contracts currently marked as critical."""
     contracts = get_contracts_by_urgency(db, "critical")
     return [build_contract_response(contract) for contract in contracts]
 
 
 @router.get("/overdue", response_model=list[ContractResponse])
 def get_overdue_contracts(db: Session = Depends(get_db)):
+    """Return contracts whose cancellation deadline has already passed."""
     contracts = get_contracts_by_urgency(db, "overdue")
     return [build_contract_response(contract) for contract in contracts]
 
 
 @router.get("/prioritized", response_model=list[ContractResponse])
 def get_prioritized_contracts_route(db: Session = Depends(get_db)):
+    """Return contracts sorted by urgency and nearest deadline."""
     contracts = get_prioritized_contracts(db)
     return [build_contract_response(contract) for contract in contracts]
 
 
 @router.get("/{contract_id}", response_model=ContractResponse)
 def get_contract(contract_id: int, db: Session = Depends(get_db)):
+    """Return a single contract by its ID."""
     contract = get_contract_by_id(db, contract_id)
 
     if not contract:
@@ -108,6 +117,7 @@ def update_existing_contract(
     contract_data: ContractUpdate,
     db: Session = Depends(get_db),
 ):
+    """Update an existing contract and return the updated data."""
     updated_contract = update_contract(db, contract_id, contract_data)
 
     if not updated_contract:
@@ -118,6 +128,7 @@ def update_existing_contract(
 
 @router.delete("/{contract_id}")
 def delete_existing_contract(contract_id: int, db: Session = Depends(get_db)):
+    """Delete a contract by its ID."""
     deleted = delete_contract(db, contract_id)
 
     if not deleted:

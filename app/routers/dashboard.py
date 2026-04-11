@@ -9,6 +9,7 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 def get_db():
+    """Provide a database session for each request and close it afterwards."""
     db = SessionLocal()
     try:
         yield db
@@ -18,4 +19,5 @@ def get_db():
 
 @router.get("/stats", response_model=DashboardStatsResponse)
 def get_stats(db: Session = Depends(get_db)):
+    """Return aggregated dashboard statistics for contracts."""
     return get_dashboard_stats(db)
