@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.cancellation import CancellationRequest
 from app.models.contract import Contract
+from app.services.action_log_service import create_action_log
 
 
 def can_transition_cancellation_status(current_status: str, new_status: str) -> bool:
@@ -95,6 +96,15 @@ def generate_cancellation_draft(db: Session, contract: Contract) -> Cancellation
     db.commit()
     db.refresh(cancellation_request)
 
+    create_action_log(
+        db=db,
+        entity_type="cancellation",
+        entity_id=cancellation_request.id,
+        action_type="generated",
+        message=f"Generated cancellation draft for contract '{contract.title}'.",
+    )
+    db.commit()
+
     return cancellation_request
 
 
@@ -126,6 +136,15 @@ def approve_cancellation_request(db: Session, cancellation_id: int) -> Cancellat
     db.commit()
     db.refresh(cancellation)
 
+    create_action_log(
+        db=db,
+        entity_type="cancellation",
+        entity_id=cancellation.id,
+        action_type="approved",
+        message=f"Approved cancellation request #{cancellation.id}.",
+    )
+    db.commit()
+
     return cancellation
 
 
@@ -143,6 +162,15 @@ def mark_cancellation_request_as_sent(db: Session, cancellation_id: int) -> Canc
     db.commit()
     db.refresh(cancellation)
 
+    create_action_log(
+        db=db,
+        entity_type="cancellation",
+        entity_id=cancellation.id,
+        action_type="sent",
+        message=f"Marked cancellation request #{cancellation.id} as sent.",
+    )
+    db.commit()
+
     return cancellation
 
 
@@ -159,5 +187,14 @@ def cancel_cancellation_request(db: Session, cancellation_id: int) -> Cancellati
     cancellation.status = "cancelled"
     db.commit()
     db.refresh(cancellation)
+
+    create_action_log(
+        db=db,
+        entity_type="cancellation",
+        entity_id=cancellation.id,
+        action_type="cancelled",
+        message=f"Cancelled cancellation request #{cancellation.id}.",
+    )
+    db.commit()
 
     return cancellation

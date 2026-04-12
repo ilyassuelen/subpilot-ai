@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.contract import Contract
 from app.services.contract_service import calculate_cancellation_deadline
+from app.services.action_log_service import create_action_log
 from app.models.reminder import Reminder
 from app.schemas.reminder import ReminderCreate
 
@@ -21,6 +22,15 @@ def create_reminder(db: Session, reminder_data: ReminderCreate) -> Reminder:
     db.add(reminder)
     db.commit()
     db.refresh(reminder)
+
+    create_action_log(
+        db=db,
+        entity_type="reminder",
+        entity_id=reminder.id,
+        action_type="created",
+        message=f"Created reminder for contract #{reminder.contract_id}.",
+    )
+    db.commit()
 
     return reminder
 
@@ -51,6 +61,15 @@ def update_reminder_statuses(db: Session) -> list[Reminder]:
 
     for reminder in updated_reminders:
         db.refresh(reminder)
+        create_action_log(
+            db=db,
+            entity_type="reminder",
+            entity_id=reminder.id,
+            action_type="missed",
+            message=f"Marked reminder #{reminder.id} as missed.",
+        )
+
+    db.commit()
 
     return updated_reminders
 
@@ -101,5 +120,14 @@ def generate_default_reminders_for_contract(db: Session, contract: Contract) -> 
 
     for reminder in created_reminders:
         db.refresh(reminder)
+        create_action_log(
+            db=db,
+            entity_type="reminder",
+            entity_id=reminder.id,
+            action_type="generated",
+            message=f"Generated default reminder for contract #{reminder.contract_id}.",
+        )
+
+    db.commit()
 
     return created_reminders
