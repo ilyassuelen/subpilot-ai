@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.schemas.cancellation import CancellationResponse
+from app.schemas.cancellation import CancellationResponse, CancellationGenerateRequest
 from app.services.cancellation_service import (
     generate_cancellation_draft,
     get_all_cancellation_requests,
@@ -27,14 +27,18 @@ def get_db():
 
 
 @router.post("/contract/{contract_id}/generate", response_model=CancellationResponse)
-def generate_contract_cancellation(contract_id: int, db: Session = Depends(get_db)):
+def generate_contract_cancellation(
+        contract_id: int,
+        request_data: CancellationGenerateRequest,
+        db: Session = Depends(get_db)
+):
     """Generate a cancellation draft for a given contract."""
     contract = get_contract_by_id(db, contract_id)
 
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    return generate_cancellation_draft(db, contract)
+    return generate_cancellation_draft(db, contract, request_data)
 
 
 @router.get("/", response_model=list[CancellationResponse])
