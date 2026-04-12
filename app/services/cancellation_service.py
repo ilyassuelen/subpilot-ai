@@ -6,6 +6,7 @@ from app.models.cancellation import CancellationRequest
 from app.models.contract import Contract
 from app.schemas.cancellation import CancellationGenerateRequest
 from app.services.action_log_service import create_action_log
+from app.services.ai.cancellation_writer import generate_cancellation_text
 
 
 def can_transition_cancellation_status(current_status: str, new_status: str) -> bool:
@@ -25,70 +26,6 @@ def build_cancellation_subject(contract: Contract, language: str) -> str:
     if language == "de":
         return f"Kündigung für {contract.title}"
     return f"Cancellation request for {contract.title}"
-
-
-def build_generated_message(contract: Contract, language: str) -> str:
-    """Build a neutral cancellation body without personal user data."""
-    provider_name = contract.provider_name
-    title = contract.title
-    effective_date = (
-        contract.end_date.strftime("%Y-%m-%d")
-        if contract.end_date
-        else "the next possible date"
-    )
-
-    if language == "de":
-        if contract.contract_type == "subscription":
-            return (
-                f"hiermit kündige ich mein Abonnement '{title}' bei {provider_name} "
-                f"zum {effective_date} beziehungsweise zum nächstmöglichen Zeitpunkt.\n\n"
-                f"Bitte bestätigen Sie mir die Kündigung schriftlich."
-            )
-
-        if contract.contract_type in {"contract", "internet_contract", "mobile_contract"}:
-            return (
-                f"hiermit kündige ich meinen Vertrag '{title}' bei {provider_name} "
-                f"zum {effective_date} beziehungsweise zum nächstmöglichen Zeitpunkt.\n\n"
-                f"Bitte bestätigen Sie mir die Kündigung schriftlich."
-            )
-
-        if contract.contract_type == "insurance":
-            return (
-                f"hiermit kündige ich meinen Versicherungsvertrag '{title}' bei {provider_name} "
-                f"zum {effective_date} beziehungsweise zum nächstmöglichen Zeitpunkt.\n\n"
-                f"Bitte senden Sie mir eine schriftliche Bestätigung der Kündigung."
-            )
-
-        return (
-            f"hiermit kündige ich '{title}' bei {provider_name} zum nächstmöglichen Zeitpunkt.\n\n"
-            f"Bitte bestätigen Sie mir die Kündigung schriftlich."
-        )
-
-    if contract.contract_type == "subscription":
-        return (
-            f"I hereby cancel my subscription '{title}' with {provider_name} effective {effective_date} "
-            f"or at the next possible date.\n\n"
-            f"Please confirm the cancellation in writing."
-        )
-
-    if contract.contract_type in {"contract", "internet_contract", "mobile_contract"}:
-        return (
-            f"I hereby cancel my contract '{title}' with {provider_name} effective {effective_date} "
-            f"or at the next possible date.\n\n"
-            f"Please confirm the cancellation in writing."
-        )
-
-    if contract.contract_type == "insurance":
-        return (
-            f"I hereby cancel my insurance contract '{title}' with {provider_name} effective {effective_date} "
-            f"or at the next possible date.\n\n"
-            f"Please provide written confirmation of the cancellation."
-        )
-
-    return (
-        f"I hereby cancel '{title}' with {provider_name} at the next possible date.\n\n"
-        f"Please confirm the cancellation in writing."
-    )
 
 
 def build_final_message(
@@ -169,7 +106,7 @@ def generate_cancellation_draft(
     existing_draft = get_draft_cancellation_by_contract(db, contract.id)
 
     subject = build_cancellation_subject(contract, request_data.language)
-    generated_message = build_generated_message(contract, request_data.language)
+    generated_message = generate_cancellation_text(contract, request_data.language)
     final_message = build_final_message(contract, request_data, subject, generated_message)
 
     if existing_draft:
