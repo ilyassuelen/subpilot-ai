@@ -9,6 +9,22 @@ from app.services.action_log_service import create_action_log
 from app.services.ai.cancellation_writer import generate_cancellation_text
 
 
+def normalize_optional_text(value: str | None) -> str | None:
+    """Normalize optional text values from form input."""
+    if value is None:
+        return None
+
+    cleaned = value.strip()
+
+    if cleaned == "":
+        return None
+
+    if cleaned.lower() in {"null", "none", "string"}:
+        return None
+
+    return cleaned
+
+
 def can_transition_cancellation_status(current_status: str, new_status: str) -> bool:
     """Validate whether a cancellation request is allowed to move to a new status."""
     allowed_transitions = {
@@ -37,26 +53,33 @@ def build_final_message(
     """Build the full cancellation letter by inserting personal and provider data in the backend."""
     date_str = datetime.utcnow().strftime("%Y-%m-%d")
 
+    customer_name = normalize_optional_text(request_data.customer_name)
+    customer_address = normalize_optional_text(request_data.customer_address)
+    customer_email = normalize_optional_text(request_data.customer_email)
+    customer_number = normalize_optional_text(request_data.customer_number)
+    provider_email = normalize_optional_text(request_data.provider_email) or contract.provider_email
+    provider_address = normalize_optional_text(request_data.provider_address)
+
     customer_block_parts = [
-        request_data.customer_name,
-        request_data.customer_address,
-        request_data.customer_email,
+        customer_name,
+        customer_address,
+        customer_email,
     ]
     customer_block = "\n".join(part for part in customer_block_parts if part)
 
     provider_block_parts = [
         contract.provider_name,
-        request_data.provider_address,
-        request_data.provider_email or contract.provider_email,
+        provider_address,
+        provider_email,
     ]
     provider_block = "\n".join(part for part in provider_block_parts if part)
 
     customer_number_line = (
-        f"\nCustomer number: {request_data.customer_number}"
-        if request_data.customer_number and request_data.language != "de"
+        f"\nCustomer number: {customer_number}"
+        if customer_number and request_data.language != "de"
         else (
-            f"\nKundennummer: {request_data.customer_number}"
-            if request_data.customer_number
+            f"\nKundennummer: {customer_number}"
+            if customer_number
             else ""
         )
     )
@@ -70,7 +93,7 @@ def build_final_message(
             f"Sehr geehrte Damen und Herren,\n\n"
             f"{generated_message}\n\n"
             f"Mit freundlichen Grüßen\n"
-            f"{request_data.customer_name or ''}".strip()
+            f"{customer_name or ''}".strip()
         )
 
     return (
@@ -81,7 +104,7 @@ def build_final_message(
         f"Dear Sir or Madam,\n\n"
         f"{generated_message}\n\n"
         f"Best regards\n"
-        f"{request_data.customer_name or ''}".strip()
+        f"{customer_name or ''}".strip()
     )
 
 
@@ -105,19 +128,26 @@ def generate_cancellation_draft(
     """Generate and persist a cancellation draft for a contract using form input."""
     existing_draft = get_draft_cancellation_by_contract(db, contract.id)
 
+    customer_name = normalize_optional_text(request_data.customer_name)
+    customer_address = normalize_optional_text(request_data.customer_address)
+    customer_email = normalize_optional_text(request_data.customer_email)
+    customer_number = normalize_optional_text(request_data.customer_number)
+    provider_email = normalize_optional_text(request_data.provider_email) or contract.provider_email
+    provider_address = normalize_optional_text(request_data.provider_address)
+
     subject = build_cancellation_subject(contract, request_data.language)
     generated_message = generate_cancellation_text(contract, request_data.language)
     final_message = build_final_message(contract, request_data, subject, generated_message)
 
     if existing_draft:
         existing_draft.language = request_data.language
-        existing_draft.customer_name = request_data.customer_name
-        existing_draft.customer_address = request_data.customer_address
-        existing_draft.customer_email = request_data.customer_email
-        existing_draft.customer_number = request_data.customer_number
+        existing_draft.customer_name = customer_name
+        existing_draft.customer_address = customer_address
+        existing_draft.customer_email = customer_email
+        existing_draft.customer_number = customer_number
         existing_draft.provider_name = contract.provider_name
-        existing_draft.provider_email = request_data.provider_email or contract.provider_email
-        existing_draft.provider_address = request_data.provider_address
+        existing_draft.provider_email = provider_email
+        existing_draft.provider_address = provider_address
         existing_draft.subject = subject
         existing_draft.generated_message = generated_message
         existing_draft.final_message = final_message
@@ -139,13 +169,13 @@ def generate_cancellation_draft(
     cancellation_request = CancellationRequest(
         contract_id=contract.id,
         language=request_data.language,
-        customer_name=request_data.customer_name,
-        customer_address=request_data.customer_address,
-        customer_email=request_data.customer_email,
-        customer_number=request_data.customer_number,
+        customer_name=customer_name,
+        customer_address=customer_address,
+        customer_email=customer_email,
+        customer_number=customer_number,
         provider_name=contract.provider_name,
-        provider_email=request_data.provider_email or contract.provider_email,
-        provider_address=request_data.provider_address,
+        provider_email=provider_email,
+        provider_address=provider_address,
         subject=subject,
         generated_message=generated_message,
         final_message=final_message,
