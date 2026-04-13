@@ -41,6 +41,8 @@ Important rules:
 - Do not include a subject line.
 - Do not include a greeting like "Dear Sir or Madam" or "Sehr geehrte Damen und Herren".
 - Do not include a signature.
+- Always express a clear cancellation intent.
+- Always ask for written confirmation of the cancellation.
 - The date "{effective_date}" refers to the intended cancellation effective date or contract end date.
 - Do NOT describe this date as the contract start date, activation date, or effective start.
 - Do not invent legal claims or extra facts.
@@ -59,6 +61,7 @@ Contract details:
     response = client.responses.create(
         model=model_name,
         input=prompt,
+        temperature=0.2,
     )
 
     text = response.output_text.strip()
