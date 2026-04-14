@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.schemas.cancellation import CancellationResponse, CancellationGenerateRequest
+from app.schemas.email_preview import EmailPreviewResponse
 from app.services.cancellation_service import (
     generate_cancellation_draft,
     get_all_cancellation_requests,
@@ -11,6 +12,7 @@ from app.services.cancellation_service import (
     mark_cancellation_request_as_sent,
     cancel_cancellation_request,
     can_transition_cancellation_status,
+    build_cancellation_email_preview,
 )
 from app.services.contract_service import get_contract_by_id
 
@@ -56,6 +58,26 @@ def get_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Cancellation request not found")
 
     return cancellation
+
+
+@router.get("/{cancellation_id}/email-preview", response_model=EmailPreviewResponse)
+def get_cancellation_email_preview(cancellation_id: int, db: Session = Depends(get_db)):
+    """Return a send-ready email preview for a cancellation request."""
+    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+
+    if not cancellation:
+        raise HTTPException(status_code=404, detail="Cancellation request not found")
+
+    if cancellation.status != "approved":
+        raise HTTPException(
+            status_code=400,
+            detail="Cancellation request must be approved before generating email preview"
+        )
+
+    if not cancellation.provider_email:
+        raise HTTPException(status_code=400, detail="Provider email is missing")
+
+    return build_cancellation_email_preview(cancellation)
 
 
 @router.post("/{cancellation_id}/approve", response_model=CancellationResponse)

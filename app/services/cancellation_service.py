@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib.parse import quote
 
 from sqlalchemy.orm import Session
 
@@ -289,3 +290,26 @@ def cancel_cancellation_request(db: Session, cancellation_id: int) -> Cancellati
     db.commit()
 
     return cancellation
+
+
+def build_cancellation_email_preview(cancellation: CancellationRequest) -> dict:
+    """Build a send-ready email preview including a mailto link."""
+    if not cancellation.provider_email:
+        raise ValueError("Cancellation request has no provider email.")
+
+    to = cancellation.provider_email
+    subject = cancellation.subject
+    body = cancellation.final_message
+
+    encoded_subject = quote(subject)
+    encoded_body = quote(body)
+    encoded_to = quote(to)
+
+    mailto_link = f"mailto:{encoded_to}?subject={encoded_subject}&body={encoded_body}"
+
+    return {
+        "to": to,
+        "subject": subject,
+        "body": body,
+        "mailto_link": mailto_link,
+    }
