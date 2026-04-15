@@ -1,12 +1,23 @@
+export type ContractType =
+  | "subscription"
+  | "contract"
+  | "internet_contract"
+  | "mobile_contract"
+  | "insurance";
+
+export type BillingCycle = "weekly" | "monthly" | "quarterly" | "yearly";
+
+export type ContractStatus = "active" | "cancelled";
+
 export type Contract = {
   id: number;
   title: string;
   provider_name: string;
   provider_email: string | null;
   category: string;
-  contract_type: string;
+  contract_type: ContractType;
   monthly_cost: number;
-  billing_cycle: string;
+  billing_cycle: BillingCycle;
   currency: string;
   start_date: string;
   end_date: string | null;
@@ -15,7 +26,7 @@ export type Contract = {
   cancellation_deadline: string | null;
   days_until_deadline: number | null;
   urgency_status: string;
-  status: string;
+  status: ContractStatus;
   notes: string | null;
   created_at: string;
 };
@@ -25,14 +36,15 @@ export type ContractCreateRequest = {
   provider_name: string;
   provider_email?: string | null;
   category: string;
-  contract_type: string;
+  contract_type: ContractType;
   monthly_cost: number;
-  billing_cycle: string;
+  billing_cycle: BillingCycle;
   currency: string;
   start_date: string;
   end_date?: string | null;
   auto_renewal: boolean;
   cancellation_notice_days: number;
+  status: ContractStatus;
   notes?: string | null;
 };
 

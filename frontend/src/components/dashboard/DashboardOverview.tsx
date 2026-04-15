@@ -78,10 +78,17 @@ function mapActionTypeToColor(action: ActionLog) {
   return "bg-warning";
 }
 
+function getNormalizedMonthlyCost(contract: Contract) {
+  if (contract.billing_cycle === "weekly") return (contract.monthly_cost * 52) / 12;
+  if (contract.billing_cycle === "monthly") return contract.monthly_cost;
+  if (contract.billing_cycle === "quarterly") return contract.monthly_cost / 3;
+  if (contract.billing_cycle === "yearly") return contract.monthly_cost / 12;
+  return contract.monthly_cost;
+}
+
 function buildMonthlyTrend(activeContracts: Contract[]) {
-  const currentMonthlyTotal = activeContracts.reduce(
-    (sum, contract) =>
-      contract.billing_cycle === "monthly" ? sum + contract.monthly_cost : sum,
+  const currentRecurringTotal = activeContracts.reduce(
+    (sum, contract) => sum + getNormalizedMonthlyCost(contract),
     0,
   );
 
@@ -104,7 +111,7 @@ function buildMonthlyTrend(activeContracts: Contract[]) {
   ];
 
   const values = multipliers.map((multiplier) =>
-    Math.max(0, Math.round(currentMonthlyTotal * multiplier)),
+    Math.max(0, Math.round(currentRecurringTotal * multiplier)),
   );
 
   return {
@@ -152,9 +159,8 @@ export function DashboardOverview() {
   );
 
   const kpis = useMemo(() => {
-    const monthlyCost = activeContracts.reduce(
-      (sum, contract) =>
-        contract.billing_cycle === "monthly" ? sum + contract.monthly_cost : sum,
+    const recurringCost = activeContracts.reduce(
+      (sum, contract) => sum + getNormalizedMonthlyCost(contract),
       0,
     );
 
@@ -176,8 +182,8 @@ export function DashboardOverview() {
       },
       {
         icon: DollarSign,
-        label: "Monthly Cost",
-        value: formatCurrency(monthlyCost, "EUR"),
+        label: "Recurring Cost",
+        value: formatCurrency(recurringCost, "EUR"),
         change: "current",
         gradient: "bg-gradient-card-coral",
       },
@@ -214,22 +220,20 @@ export function DashboardOverview() {
       .map((contract) => ({
         name: contract.title,
         date: formatMonthDay(contract.end_date ?? contract.cancellation_deadline),
-        amount: formatCurrency(contract.monthly_cost, contract.currency),
+        amount: formatCurrency(getNormalizedMonthlyCost(contract), contract.currency),
         urgent: ["critical", "overdue"].includes(contract.urgency_status),
       }));
   }, [activeContracts]);
 
   const categories = useMemo(() => {
     const total = activeContracts.reduce(
-      (sum, contract) =>
-        contract.billing_cycle === "monthly" ? sum + contract.monthly_cost : sum,
+      (sum, contract) => sum + getNormalizedMonthlyCost(contract),
       0,
     );
 
     const grouped: Record<string, number> = {};
     activeContracts.forEach((contract) => {
-      const value =
-        contract.billing_cycle === "monthly" ? contract.monthly_cost : 0;
+      const value = getNormalizedMonthlyCost(contract);
       grouped[contract.category] = (grouped[contract.category] || 0) + value;
     });
 
@@ -335,7 +339,7 @@ export function DashboardOverview() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card lg:col-span-2">
           <h3 className="mb-4 font-[var(--font-display)] font-bold">
-            Monthly Cost Trend
+            Recurring Cost Trend
           </h3>
 
           <div className="flex h-36 items-end gap-2">

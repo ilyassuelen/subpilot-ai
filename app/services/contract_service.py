@@ -21,6 +21,7 @@ def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
         end_date=contract_data.end_date,
         auto_renewal=contract_data.auto_renewal,
         cancellation_notice_days=contract_data.cancellation_notice_days,
+        status=contract_data.status,
         notes=contract_data.notes,
     )
 
@@ -134,6 +135,19 @@ def calculate_urgency_status(contract: Contract) -> str:
         return "safe"
 
 
+def get_normalized_monthly_cost(contract: Contract) -> float:
+    """Return the contract cost normalized to a monthly value."""
+    if contract.billing_cycle == "weekly":
+        return (contract.monthly_cost * 52) / 12
+    if contract.billing_cycle == "monthly":
+        return contract.monthly_cost
+    if contract.billing_cycle == "quarterly":
+        return contract.monthly_cost / 3
+    if contract.billing_cycle == "yearly":
+        return contract.monthly_cost / 12
+    return contract.monthly_cost
+
+
 def get_dashboard_stats(db: Session) -> dict:
     """Calculate dashboard statistics for contracts and monthly costs."""
     contracts = get_all_contracts(db)
@@ -143,7 +157,12 @@ def get_dashboard_stats(db: Session) -> dict:
     critical_contracts = len(
         [contract for contract in contracts if calculate_urgency_status(contract) == "critical"]
     )
-    monthly_total_cost = sum(contract.monthly_cost for contract in contracts if contract.status == "active")
+
+    monthly_total_cost = sum(
+        get_normalized_monthly_cost(contract)
+        for contract in contracts
+        if contract.status == "active"
+    )
 
     return {
         "total_contracts": total_contracts,

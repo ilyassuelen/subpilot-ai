@@ -85,7 +85,7 @@ export function HeroSection() {
                     <div className="bg-gradient-card-blue rounded-xl p-3 text-center">
                       <DollarSign className="w-4 h-4 text-primary mx-auto mb-1" />
                       <div className="text-lg font-bold font-[var(--font-display)]">$150.95</div>
-                      <div className="text-[10px] text-muted-foreground">Monthly Cost</div>
+                      <div className="text-[10px] text-muted-foreground">Recurring Cost</div>
                     </div>
                     <div className="bg-gradient-card-coral rounded-xl p-3 text-center">
                       <Calendar className="w-4 h-4 text-coral mx-auto mb-1" />

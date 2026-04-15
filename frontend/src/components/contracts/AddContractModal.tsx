@@ -28,11 +28,17 @@ const addContractSchema = z.object({
       "Invalid email address",
     ),
   category: z.string().min(1, "Category is required").max(100),
-  contract_type: z.string().min(1, "Contract type is required").max(100),
+  contract_type: z.enum(
+    ["subscription", "contract", "internet_contract", "mobile_contract", "insurance"],
+    { message: "Contract type is required" },
+  ),
   monthly_cost: z.coerce
     .number()
     .positive("Monthly cost must be greater than 0"),
-  billing_cycle: z.string().min(1, "Billing cycle is required").max(50),
+  billing_cycle: z.enum(
+    ["weekly", "monthly", "quarterly", "yearly"],
+    { message: "Billing cycle is required" },
+  ),
   currency: z.string().min(1, "Currency is required").max(10),
   start_date: z.string().min(1, "Start date is required"),
   end_date: z.string().optional().or(z.literal("")),
@@ -40,6 +46,7 @@ const addContractSchema = z.object({
   cancellation_notice_days: z.coerce
     .number()
     .min(0, "Cancellation notice days must be 0 or more"),
+  status: z.enum(["active", "cancelled"], { message: "Status is required" }),
   notes: z.string().optional().or(z.literal("")),
 });
 
@@ -76,6 +83,7 @@ export function AddContractModal({
       end_date: "",
       auto_renewal: true,
       cancellation_notice_days: 30,
+      status: "active",
       notes: "",
     },
   });
@@ -101,6 +109,7 @@ export function AddContractModal({
       end_date: data.end_date?.trim() ? data.end_date : null,
       auto_renewal: data.auto_renewal,
       cancellation_notice_days: data.cancellation_notice_days,
+      status: data.status,
       notes: data.notes?.trim() ? data.notes.trim() : null,
     };
 
@@ -220,7 +229,7 @@ export function AddContractModal({
 
             <div className="space-y-2">
               <Label htmlFor="monthly_cost" className="text-xs">
-                Monthly Cost
+                Cost per Billing Cycle
               </Label>
               <Input
                 id="monthly_cost"
@@ -247,10 +256,10 @@ export function AddContractModal({
                 className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm"
                 {...register("billing_cycle")}
               >
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
                 <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
               </select>
               {errors.billing_cycle && (
                 <p className="text-xs text-destructive">
@@ -272,6 +281,25 @@ export function AddContractModal({
               {errors.currency && (
                 <p className="text-xs text-destructive">
                   {errors.currency.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status" className="text-xs">
+                Status
+              </Label>
+              <select
+                id="status"
+                className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                {...register("status")}
+              >
+                <option value="active">Active</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              {errors.status && (
+                <p className="text-xs text-destructive">
+                  {errors.status.message}
                 </p>
               )}
             </div>

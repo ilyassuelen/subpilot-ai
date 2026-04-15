@@ -412,7 +412,7 @@ export function ContractsPage() {
                     ["Provider", detailContract.provider_name],
                     ["Category", detailContract.category],
                     [
-                      "Monthly Cost",
+                      "Cost per Billing Cycle",
                       formatCurrency(
                         detailContract.monthly_cost,
                         detailContract.currency,
