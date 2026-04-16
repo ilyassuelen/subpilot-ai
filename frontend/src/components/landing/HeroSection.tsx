@@ -6,10 +6,26 @@ import { motion } from "framer-motion";
 import { ArrowRight, TrendingUp, Bell, Shield, FileText, Calendar, DollarSign } from "lucide-react";
 
 const stats = [
-  { value: "12,400+", label: "Contracts Tracked", icon: FileText },
-  { value: "$2.1M", label: "Savings Found", icon: TrendingUp },
-  { value: "8,200+", label: "Renewals Flagged", icon: Bell },
-  { value: "5,600+", label: "AI Drafts Generated", icon: Shield },
+  {
+    value: "All-in-One",
+    label: "Track subscriptions and contracts in one dashboard",
+    icon: FileText,
+  },
+  {
+    value: "Deadline Alerts",
+    label: "Stay ahead of renewals and cancellation periods",
+    icon: Bell,
+  },
+  {
+    value: "AI Drafts",
+    label: "Generate ready-to-send cancellation messages",
+    icon: Shield,
+  },
+  {
+    value: "Cost Insights",
+    label: "Understand your recurring spending more clearly",
+    icon: TrendingUp,
+  },
 ];
 
 const mockServices = [
@@ -43,13 +59,12 @@ export function HeroSection() {
                 AI-Powered Subscription Assistant
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight font-[var(--font-display)]">
-                Your AI Co-Pilot for{" "}
+                Your Smart Assistant for{" "}
                 <span className="text-gradient-primary">Subscriptions</span>{" "}
                 & Contracts
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                Track recurring costs, get renewal reminders, see spending analytics,
-                and generate AI-assisted cancellation emails — all from one smart dashboard.
+                Track your recurring costs, never miss cancellation deadlines, and generate ready-to-send cancellation messages. All in one place.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Button variant="hero" size="xl" onClick={() => setRegisterOpen(true)}>

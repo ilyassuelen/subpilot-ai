@@ -25,10 +25,11 @@ export function DashboardSidebar() {
       <div className="h-16 flex items-center justify-between px-4 border-b border-border">
         {!collapsed && (
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Plane className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold font-[var(--font-display)]">SubPilot</span>
+            <img
+                src="/logo_subpilot.png"
+                alt="SubPilot Logo"
+                className="h-18 w-auto object-contain"
+            />
           </Link>
         )}
         {collapsed && (

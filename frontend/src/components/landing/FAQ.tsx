@@ -1,15 +1,45 @@
 import { motion } from "framer-motion";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { HelpCircle } from "lucide-react";
 
 const faqs = [
-  { q: "How does SubPilot detect renewal dates?", a: "You enter renewal dates manually when adding contracts. In future versions, SubPilot will support optional email scanning to auto-detect subscriptions and dates." },
-  { q: "Does the AI see my personal data?", a: "No. SubPilot's AI generates neutral, professional letter templates without accessing your personal information. Your name, address, and customer details are added only in the final backend composition step." },
-  { q: "Can I send cancellation emails directly?", a: "SubPilot prepares send-ready emails that open in your default mail client with the subject, body, and recipient pre-filled. You review everything before hitting send." },
-  { q: "Can I manage non-subscription contracts too?", a: "Yes! SubPilot supports any type of recurring contract — gym memberships, insurance policies, telecom plans, software licenses, and more." },
-  { q: "Can I use multiple languages?", a: "Absolutely. SubPilot can generate cancellation letters in German, English, French, Spanish, and more. Just select your preferred language when creating a draft." },
-  { q: "Will future versions support email scanning?", a: "Yes, automated email scanning is on our roadmap. It will be opt-in and privacy-focused, allowing SubPilot to detect and import subscriptions from your inbox." },
-  { q: "Can I export my contracts?", a: "Yes, you can export your contract data as CSV or PDF from the Settings page for your records or for use with other tools." },
+  {
+    q: "How does SubPilot track renewal and cancellation dates?",
+    a: "Contracts are added manually with their start date, end date, and notice period. Based on that information, SubPilot can calculate cancellation deadlines and help surface important dates in the dashboard.",
+  },
+  {
+    q: "Does the AI see my personal data?",
+    a: "The cancellation draft workflow is designed so that sensitive personal data can be kept separate from AI-generated draft text. Customer-specific details are intended to be handled later in the backend workflow.",
+  },
+  {
+    q: "Can I send cancellation emails directly from SubPilot?",
+    a: "SubPilot prepares send-ready email content and opens a pre-composed draft in your mail client, so the final review and sending step stays under user control.",
+  },
+  {
+    q: "Can I manage contracts beyond subscriptions?",
+    a: "Yes. SubPilot is designed not only for subscriptions, but also for recurring contracts such as telecom plans, insurance policies, memberships, and software services.",
+  },
+  {
+    q: "Does SubPilot support multiple billing cycles?",
+    a: "Yes. Contracts can be created with weekly, monthly, quarterly, or yearly billing cycles, which helps the dashboard represent recurring costs more realistically.",
+  },
+  {
+    q: "Is multi-language cancellation generation supported?",
+    a: "The product is designed with multi-language draft generation in mind. Current and future language support depends on the cancellation workflow configuration and planned product expansion.",
+  },
+  {
+    q: "Will future versions support inbox or email scanning?",
+    a: "Yes, inbox-based subscription detection is planned as a future feature. The goal is to keep it opt-in and privacy-aware rather than making it automatic by default.",
+  },
+  {
+    q: "What is the main AI use case in the current product?",
+    a: "The current AI focus is cancellation draft generation. Additional AI capabilities such as smarter insights and automation support are part of the broader product direction.",
+  },
 ];
 
 export function FAQ() {
@@ -26,9 +56,15 @@ export function FAQ() {
             <HelpCircle className="w-3.5 h-3.5" />
             FAQ
           </div>
+
           <h2 className="text-3xl sm:text-4xl font-extrabold font-[var(--font-display)] tracking-tight">
             Frequently Asked Questions
           </h2>
+
+          <p className="mt-4 text-muted-foreground text-lg">
+            A quick overview of how SubPilot handles contracts, recurring costs,
+            AI-generated drafts, and planned platform capabilities.
+          </p>
         </motion.div>
 
         <motion.div
@@ -46,6 +82,7 @@ export function FAQ() {
                 <AccordionTrigger className="text-left font-semibold font-[var(--font-display)] text-sm hover:no-underline py-4">
                   {faq.q}
                 </AccordionTrigger>
+
                 <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-4">
                   {faq.a}
                 </AccordionContent>

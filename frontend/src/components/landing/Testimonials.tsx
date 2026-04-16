@@ -1,30 +1,26 @@
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+import { User, Briefcase, Users, Wallet } from "lucide-react";
 
-const testimonials = [
+const useCases = [
   {
-    name: "Sarah M.",
-    role: "Freelance Designer",
-    text: "SubPilot saved me over €300 in forgotten subscriptions I didn't even know I was still paying for.",
-    stars: 5,
+    icon: User,
+    title: "Individuals",
+    text: "Keep track of personal subscriptions, recurring services, and cancellation deadlines in one clear dashboard.",
   },
   {
-    name: "Thomas K.",
-    role: "IT Manager",
-    text: "The AI cancellation feature is brilliant. I cancelled 4 contracts in under 10 minutes — with professional German letters.",
-    stars: 5,
+    icon: Briefcase,
+    title: "Freelancers",
+    text: "Manage software tools, platforms, and service contracts while staying on top of recurring business costs.",
   },
   {
-    name: "Lisa R.",
-    role: "Student",
-    text: "Finally an app that shows me exactly where my money goes every month. The analytics are beautiful and actually useful.",
-    stars: 5,
+    icon: Users,
+    title: "Families",
+    text: "Monitor shared subscriptions and household contracts more clearly to avoid forgotten renewals and duplicate services.",
   },
   {
-    name: "Marco D.",
-    role: "Small Business Owner",
-    text: "I manage contracts for my whole team with SubPilot. The reminders alone have prevented several accidental renewals.",
-    stars: 4,
+    icon: Wallet,
+    title: "Cost-Conscious Users",
+    text: "Understand recurring spending, identify expensive categories, and make better decisions before contracts renew.",
   },
 ];
 
@@ -36,42 +32,39 @@ export function Testimonials() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center max-w-2xl mx-auto mb-16"
+          className="text-center max-w-3xl mx-auto mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-extrabold font-[var(--font-display)] tracking-tight">
-            Trusted by{" "}
-            <span className="text-gradient-primary">thousands</span>
+            Who <span className="text-gradient-primary">SubPilot</span> is for
           </h2>
           <p className="mt-4 text-muted-foreground text-lg">
-            Professionals, families, freelancers, and students use SubPilot to stay in control.
+            From personal subscriptions to recurring business services, SubPilot
+            is designed for users who want more clarity, better timing, and less
+            manual effort in contract management.
           </p>
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {testimonials.map((t, i) => (
+          {useCases.map((item, i) => (
             <motion.div
-              key={t.name}
+              key={item.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
               className="bg-card rounded-2xl p-6 shadow-card border border-border/50"
             >
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: 5 }).map((_, si) => (
-                  <Star key={si} className={`w-4 h-4 ${si < t.stars ? "text-warning fill-warning" : "text-muted"}`} />
-                ))}
+              <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <item.icon className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-sm text-foreground leading-relaxed mb-4">"{t.text}"</p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-                  {t.name.split(" ").map(n => n[0]).join("")}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.role}</div>
-                </div>
-              </div>
+
+              <h3 className="text-lg font-bold font-[var(--font-display)] mb-2">
+                {item.title}
+              </h3>
+
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {item.text}
+              </p>
             </motion.div>
           ))}
         </div>

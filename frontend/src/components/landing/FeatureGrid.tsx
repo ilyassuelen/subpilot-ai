@@ -1,68 +1,114 @@
 import { motion } from "framer-motion";
 import {
-  BarChart3, Bell, FileText, Globe, Shield, Zap,
-  Activity, Lock, Search, BrainCircuit, Wallet, TrendingUp
+  BarChart3,
+  Bell,
+  FileText,
+  Globe,
+  Shield,
+  Zap,
+  Activity,
+  Lock,
+  Search,
+  BrainCircuit,
+  Wallet,
+  TrendingUp,
 } from "lucide-react";
 
 const features = [
   {
-    icon: BarChart3, title: "Subscription Tracking", size: "large",
-    description: "See all your active and cancelled subscriptions in one unified dashboard with real-time cost summaries.",
+    icon: BarChart3,
+    title: "Subscription Tracking",
+    size: "large",
+    description:
+      "Manage subscriptions and contracts in one unified dashboard with a clear overview of active items, recurring costs, and status changes.",
     gradient: "bg-gradient-card-blue",
   },
   {
-    icon: Bell, title: "Renewal Reminders", size: "small",
-    description: "Get notified before renewals so you never get charged by surprise.",
+    icon: Bell,
+    title: "Renewal Reminders",
+    size: "small",
+    description:
+      "Stay ahead of renewals, notice periods, and cancellation deadlines before charges happen unexpectedly.",
     gradient: "bg-gradient-card-coral",
   },
   {
-    icon: TrendingUp, title: "Spending Analytics", size: "small",
-    description: "Visual breakdowns of your spending by category, trend, and time.",
+    icon: TrendingUp,
+    title: "Spending Analytics",
+    size: "small",
+    description:
+      "Understand recurring costs through category breakdowns, spending trends, and contract-based cost visibility.",
     gradient: "bg-gradient-card-green",
   },
   {
-    icon: FileText, title: "AI Cancellation Drafts", size: "large",
-    description: "Generate professional cancellation letters with AI — privacy-safe, multilingual, and ready to send.",
+    icon: FileText,
+    title: "AI Cancellation Drafts",
+    size: "large",
+    description:
+      "Generate ready-to-send cancellation drafts with AI support while keeping sensitive personal data outside the AI layer.",
     gradient: "bg-gradient-card-purple",
   },
   {
-    icon: Zap, title: "Send-Ready Emails", size: "small",
-    description: "Review, approve, and open pre-composed cancellation emails with one click.",
+    icon: Zap,
+    title: "Send-Ready Emails",
+    size: "small",
+    description:
+      "Review approved cancellation drafts and open pre-composed emails instantly for faster follow-through.",
     gradient: "bg-gradient-card-yellow",
   },
   {
-    icon: Activity, title: "Activity Feed", size: "small",
-    description: "Track every action — new contracts, reminders, cancellations — in a rich timeline.",
+    icon: Activity,
+    title: "Activity Feed",
+    size: "small",
+    description:
+      "Follow contract changes, reminders, and cancellation actions in one structured timeline.",
     gradient: "bg-gradient-card-blue",
   },
   {
-    icon: Lock, title: "Privacy-Safe AI", size: "small",
-    description: "Personal data never touches the AI layer. Final letters are composed safely in the backend.",
+    icon: Lock,
+    title: "Privacy-Safe AI",
+    size: "small",
+    description:
+      "AI is used selectively, while final letter composition and sensitive customer data handling remain safely managed in the backend.",
     gradient: "bg-gradient-card-green",
   },
   {
-    icon: Globe, title: "Multi-Language", size: "small",
-    description: "Write cancellation letters in any language — German, English, French, Spanish and more.",
+    icon: Shield,
+    title: "Contract Deadlines",
+    size: "small",
+    description:
+      "Track contract end dates, notice periods, and cancellation deadlines in a way that supports real decision-making.",
     gradient: "bg-gradient-card-coral",
   },
   {
-    icon: Search, title: "Future: Email Scan", size: "small",
-    description: "Coming soon: auto-detect subscriptions from your inbox with opt-in email scanning.",
-    gradient: "bg-gradient-card-purple",
-  },
-  {
-    icon: Wallet, title: "Budget Overview", size: "small",
-    description: "Set monthly budgets and get alerts when your recurring costs exceed your limits.",
-    gradient: "bg-gradient-card-yellow",
-  },
-  {
-    icon: BrainCircuit, title: "Smart Insights", size: "small",
-    description: "AI-generated insights like 'Streaming costs rose 18% this quarter' help you optimize.",
+    icon: BrainCircuit,
+    title: "Planned: Smart Insights",
+    size: "small",
+    description:
+      "Upcoming AI-powered insights will highlight recurring cost patterns, category shifts, and potential savings opportunities.",
     gradient: "bg-gradient-card-blue",
   },
   {
-    icon: Shield, title: "Contract Deadlines", size: "small",
-    description: "Track minimum terms, notice periods, and cancellation deadlines for every contract.",
+    icon: Search,
+    title: "Planned: Email Scan",
+    size: "small",
+    description:
+      "Future inbox integrations may help detect subscriptions and recurring services from emails with explicit user opt-in.",
+    gradient: "bg-gradient-card-purple",
+  },
+  {
+    icon: Wallet,
+    title: "Planned: Budget Overview",
+    size: "small",
+    description:
+      "A future budgeting layer will help users compare recurring costs against monthly spending limits.",
+    gradient: "bg-gradient-card-yellow",
+  },
+  {
+    icon: Globe,
+    title: "Planned: Multi-Language Support",
+    size: "small",
+    description:
+      "The product roadmap includes broader multi-language support for cancellation generation and international contract handling.",
     gradient: "bg-gradient-card-coral",
   },
 ];
@@ -75,18 +121,22 @@ export function FeatureGrid() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center max-w-2xl mx-auto mb-16"
+          className="text-center max-w-3xl mx-auto mb-16"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             <Zap className="w-3.5 h-3.5" />
-            Powerful Features
+            Core Features
           </div>
+
           <h2 className="text-3xl sm:text-4xl font-extrabold font-[var(--font-display)] tracking-tight">
             Everything you need to{" "}
-            <span className="text-gradient-primary">manage subscriptions</span>
+            <span className="text-gradient-primary">stay in control</span>
           </h2>
+
           <p className="mt-4 text-muted-foreground text-lg">
-            From tracking to cancellation — SubPilot handles every step of your subscription lifecycle.
+            Track contracts, monitor recurring costs, stay ahead of deadlines,
+            and generate cancellation drafts — with additional AI capabilities
+            planned as the platform evolves.
           </p>
         </motion.div>
 
@@ -105,8 +155,14 @@ export function FeatureGrid() {
               <div className="w-10 h-10 rounded-xl bg-card shadow-soft flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <feature.icon className="w-5 h-5 text-primary" />
               </div>
-              <h3 className="text-lg font-bold font-[var(--font-display)] mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+
+              <h3 className="text-lg font-bold font-[var(--font-display)] mb-2">
+                {feature.title}
+              </h3>
+
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {feature.description}
+              </p>
             </motion.div>
           ))}
         </div>

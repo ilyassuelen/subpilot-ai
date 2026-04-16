@@ -19,29 +19,36 @@ export function FinalCTA() {
           >
             <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-primary-foreground/5 blur-2xl" />
             <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-primary-foreground/5 blur-2xl" />
+
             <div className="relative">
               <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center mx-auto mb-6">
                 <Plane className="w-7 h-7" />
               </div>
+
               <h2 className="text-3xl sm:text-4xl font-extrabold font-[var(--font-display)] tracking-tight">
-                Ready to take control of your subscriptions?
+                Ready to take control of recurring costs?
               </h2>
-              <p className="mt-4 text-lg text-primary-foreground/80 max-w-xl mx-auto">
-                Join thousands of users who manage their recurring costs smarter with SubPilot.
+
+              <p className="mt-4 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
+                Explore how SubPilot combines contract tracking, deadline
+                awareness, spending visibility, and AI-assisted cancellation
+                workflows in one focused experience.
               </p>
+
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Button
                   size="xl"
                   onClick={() => setRegisterOpen(true)}
                   className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-lg font-bold"
                 >
-                  Let's Start Free <ArrowRight className="w-5 h-5" />
+                  Explore SubPilot <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </div>
           </motion.div>
         </div>
       </section>
+
       <RegistrationModal open={registerOpen} onOpenChange={setRegisterOpen} />
     </>
   );
