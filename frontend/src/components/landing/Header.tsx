@@ -32,7 +32,7 @@ export function Header() {
                 <img
                     src="/logo_subpilot.png"
                     alt="SubPilot Logo"
-                    className="h-18 w-auto object-contain cursor-pointer"
+                    className="h-20 w-auto object-contain cursor-pointer"
                 />
             </Link>
 

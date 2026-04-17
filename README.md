@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/public/git_logo.png" alt="SubPilot Logo" width="400"/>
+  <img src="frontend/public/git_logo.png" alt="SubPilot Logo" width="600"/>
 </p>
 
 **Your AI co-pilot for subscriptions and contracts.**
