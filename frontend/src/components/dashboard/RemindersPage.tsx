@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   Plus,
@@ -20,7 +20,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CreateReminderModal } from "@/components/reminders/CreateReminderModal";
-import { useReminders } from "@/hooks/useReminders";
+import {
+  useReminders,
+  useUpdateReminderStatuses,
+  useGenerateContractReminders,
+  useMarkReminderAsSent,
+} from "@/hooks/useReminders";
 import { useContracts } from "@/hooks/useContracts";
 import type { Contract, Reminder } from "@/lib/types";
 
@@ -60,7 +65,6 @@ export function RemindersPage() {
   const [filter, setFilter] = useState("all");
   const [detailReminder, setDetailReminder] = useState<Reminder | null>(null);
   const [createReminderOpen, setCreateReminderOpen] = useState(false);
-  const [regenerateOpen, setRegenerateOpen] = useState(false);
 
   const {
     data: reminders = [],
@@ -72,6 +76,14 @@ export function RemindersPage() {
     data: contracts = [],
     isLoading: contractsLoading,
   } = useContracts();
+
+  const updateStatusesMutation = useUpdateReminderStatuses();
+  const generateContractRemindersMutation = useGenerateContractReminders();
+  const markReminderAsSentMutation = useMarkReminderAsSent();
+
+  useEffect(() => {
+    updateStatusesMutation.mutate();
+  }, []);
 
   const contractMap = useMemo(() => {
     return new Map<number, Contract>(
@@ -90,6 +102,17 @@ export function RemindersPage() {
   const relatedDetailContract = detailReminder
     ? contractMap.get(detailReminder.contract_id)
     : null;
+
+  const handleRegenerate = async (contractId: number) => {
+    await generateContractRemindersMutation.mutateAsync(contractId);
+  };
+
+  const handleMarkAsSent = async (reminderId: number) => {
+    await markReminderAsSentMutation.mutateAsync(reminderId);
+    if (detailReminder?.id === reminderId) {
+      setDetailReminder(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -167,7 +190,8 @@ export function RemindersPage() {
 
                     <div>
                       <div className="font-[var(--font-display)] font-semibold">
-                        {relatedContract?.title ?? `Contract #${reminder.contract_id}`}
+                        {relatedContract?.title ??
+                          `Contract #${reminder.contract_id}`}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {formatReminderType(reminder.reminder_type)}
@@ -189,7 +213,8 @@ export function RemindersPage() {
 
                     <span
                       className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        statusColors[reminder.status] ?? "bg-muted text-muted-foreground"
+                        statusColors[reminder.status] ??
+                        "bg-muted text-muted-foreground"
                       }`}
                     >
                       <StatusIcon className="h-3 w-3" />
@@ -205,15 +230,20 @@ export function RemindersPage() {
                       </button>
 
                       <button
-                        onClick={() => setDetailReminder(reminder)}
-                        className="cursor-pointer rounded-lg p-1.5 hover:bg-muted"
+                        onClick={() => handleMarkAsSent(reminder.id)}
+                        disabled={
+                          reminder.status === "sent" ||
+                          markReminderAsSentMutation.isPending
+                        }
+                        className="cursor-pointer rounded-lg p-1.5 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Check className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
 
                       <button
-                        onClick={() => setRegenerateOpen(true)}
-                        className="cursor-pointer rounded-lg p-1.5 hover:bg-muted"
+                        onClick={() => handleRegenerate(reminder.contract_id)}
+                        disabled={generateContractRemindersMutation.isPending}
+                        className="cursor-pointer rounded-lg p-1.5 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
@@ -306,7 +336,8 @@ export function RemindersPage() {
                   <Button
                     variant="hero"
                     className="flex-1"
-                    onClick={() => setRegenerateOpen(true)}
+                    onClick={() => handleRegenerate(detailReminder.contract_id)}
+                    disabled={generateContractRemindersMutation.isPending}
                   >
                     <RotateCcw className="h-4 w-4" />
                     Regenerate
@@ -315,42 +346,6 @@ export function RemindersPage() {
               </div>
             </>
           )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={regenerateOpen} onOpenChange={setRegenerateOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-[var(--font-display)]">
-              Regenerate Reminder
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Reminder regeneration is planned as the next backend-connected step.
-              This action is now clearly surfaced in the UI instead of appearing
-              broken.
-            </p>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setRegenerateOpen(false)}
-              >
-                Close
-              </Button>
-
-              <Button
-                variant="hero"
-                className="flex-1"
-                onClick={() => setRegenerateOpen(false)}
-              >
-                Understood
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

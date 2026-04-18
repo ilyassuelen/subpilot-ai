@@ -10,6 +10,7 @@ from app.services.reminder_service import (
     get_reminders_by_contract,
     generate_default_reminders_for_contract,
     update_reminder_statuses,
+    mark_reminder_as_sent,
 )
 
 router = APIRouter(prefix="/reminders", tags=["Reminders"])
@@ -27,7 +28,15 @@ def get_db():
 @router.post("/", response_model=ReminderResponse)
 def create_new_reminder(reminder: ReminderCreate, db: Session = Depends(get_db)):
     """Create a new reminder and return the saved reminder."""
-    return create_reminder(db, reminder)
+    try:
+        return create_reminder(db, reminder)
+    except ValueError as exc:
+        message = str(exc)
+
+        if message == "Contract not found":
+            raise HTTPException(status_code=404, detail=message)
+
+        raise HTTPException(status_code=400, detail=message)
 
 
 @router.get("/", response_model=list[ReminderResponse])
@@ -62,3 +71,13 @@ def generate_contract_reminders(contract_id: int, db: Session = Depends(get_db))
         "generated_count": len(reminders),
         "reminders": reminders,
     }
+
+
+@router.post("/{reminder_id}/mark-sent", response_model=ReminderResponse)
+def mark_reminder_sent(reminder_id: int, db: Session = Depends(get_db)):
+    reminder = mark_reminder_as_sent(db, reminder_id)
+
+    if not reminder:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+
+    return reminder

@@ -7,6 +7,7 @@ import type {
   EmailPreview,
   Reminder,
   ReminderCreateRequest,
+  ReminderGenerateResponse,
 } from "./types";
 
 export const API_BASE_URL =
@@ -95,6 +96,29 @@ export function createReminder(
   return apiFetch<Reminder>("/reminders/", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function updateReminderStatuses(): Promise<Reminder[]> {
+  return apiFetch<Reminder[]>("/reminders/update-statuses", {
+    method: "POST",
+  });
+}
+
+export function generateContractReminders(
+  contractId: number,
+): Promise<ReminderGenerateResponse> {
+  return apiFetch<ReminderGenerateResponse>(
+    `/reminders/contract/${contractId}/generate`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function markReminderAsSent(reminderId: number): Promise<Reminder> {
+  return apiFetch<Reminder>(`/reminders/${reminderId}/mark-sent`, {
+    method: "POST",
   });
 }
 

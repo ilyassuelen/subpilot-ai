@@ -16,11 +16,44 @@ import { Label } from "@/components/ui/label";
 import { useCreateReminder } from "@/hooks/useReminders";
 import type { Contract, ReminderCreateRequest } from "@/lib/types";
 
+function toLocalDateTimeInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function buildReminderMessage(contract: Contract, reminderType: string) {
+  if (reminderType === "cancellation") {
+    return `Reminder: '${contract.title}' reaches its cancellation deadline soon.`;
+  }
+
+  if (reminderType === "renewal") {
+    return `Reminder: '${contract.title}' is renewing soon.`;
+  }
+
+  return "";
+}
+
 const createReminderSchema = z.object({
   contract_id: z.coerce.number().positive("Please select a contract"),
   reminder_type: z.string().min(1, "Reminder type is required").max(100),
-  message: z.string().min(1, "Message is required").max(255, "Message must be at most 255 characters"),
-  scheduled_for: z.string().min(1, "Scheduled date is required"),
+  message: z
+    .string()
+    .trim()
+    .min(1, "Message is required")
+    .max(255, "Message must be at most 255 characters"),
+  scheduled_for: z
+    .string()
+    .min(1, "Scheduled date is required")
+    .refine((value) => !Number.isNaN(new Date(value).getTime()), {
+      message: "Invalid scheduled date",
+    })
+    .refine((value) => new Date(value).getTime() > Date.now(), {
+      message: "Scheduled date must be in the future",
+    }),
   channel: z.string().min(1, "Channel is required").max(50),
 });
 
@@ -31,15 +64,6 @@ type CreateReminderModalProps = {
   onOpenChange: (open: boolean) => void;
   contracts: Contract[];
 };
-
-function toLocalDateTimeInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
 
 export function CreateReminderModal({
   open,
@@ -82,7 +106,9 @@ export function CreateReminderModal({
 
   const selectedContract =
     selectedContractId > 0
-      ? activeContracts.find((contract) => contract.id === Number(selectedContractId))
+      ? activeContracts.find(
+          (contract) => contract.id === Number(selectedContractId),
+        )
       : undefined;
 
   const closeAndReset = () => {
@@ -97,47 +123,51 @@ export function CreateReminderModal({
   };
 
   const handleReminderTypeChange = (value: string) => {
-    setValue("reminder_type", value, { shouldValidate: true });
+    setValue("reminder_type", value, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
-    if (selectedContract) {
-      if (value === "cancellation") {
-        setValue(
-          "message",
-          `Reminder: '${selectedContract.title}' reaches its cancellation deadline soon.`,
-          { shouldValidate: true },
-        );
-      } else if (value === "renewal") {
-        setValue(
-          "message",
-          `Reminder: '${selectedContract.title}' is renewing soon.`,
-          { shouldValidate: true },
-        );
-      } else {
-        setValue("message", "", { shouldValidate: true });
+    if (!selectedContract) {
+      if (value === "custom") {
+        setValue("message", "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
       }
+      return;
     }
+
+    if (value === "custom") {
+      setValue("message", "", {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      return;
+    }
+
+    setValue("message", buildReminderMessage(selectedContract, value), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   const handleContractChange = (contractId: number) => {
     const contract = activeContracts.find((item) => item.id === contractId);
 
-    setValue("contract_id", contractId, { shouldValidate: true });
+    setValue("contract_id", contractId, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
-    if (!contract) return;
-
-    if (selectedReminderType === "cancellation") {
-      setValue(
-        "message",
-        `Reminder: '${contract.title}' reaches its cancellation deadline soon.`,
-        { shouldValidate: true },
-      );
-    } else if (selectedReminderType === "renewal") {
-      setValue(
-        "message",
-        `Reminder: '${contract.title}' is renewing soon.`,
-        { shouldValidate: true },
-      );
+    if (!contract || selectedReminderType === "custom") {
+      return;
     }
+
+    setValue("message", buildReminderMessage(contract, selectedReminderType), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
   };
 
   const onSubmit = async (data: CreateReminderFormData) => {
@@ -152,6 +182,9 @@ export function CreateReminderModal({
     await createReminderMutation.mutateAsync(payload);
     closeAndReset();
   };
+
+  const isSubmitDisabled =
+    createReminderMutation.isPending || activeContracts.length === 0;
 
   return (
     <Dialog
@@ -273,6 +306,12 @@ export function CreateReminderModal({
             </div>
           </div>
 
+          {activeContracts.length === 0 && (
+            <div className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">
+              No active contracts available. Create an active contract first.
+            </div>
+          )}
+
           {createReminderMutation.error && (
             <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
               {createReminderMutation.error.message}
@@ -294,7 +333,7 @@ export function CreateReminderModal({
               type="submit"
               variant="hero"
               className="flex-1"
-              disabled={createReminderMutation.isPending}
+              disabled={isSubmitDisabled}
             >
               {createReminderMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

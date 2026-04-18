@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateContract } from "@/hooks/useContracts";
+import { useGenerateContractReminders } from "@/hooks/useReminders";
 import type { ContractCreateRequest } from "@/lib/types";
 
 const addContractSchema = z.object({
@@ -29,24 +30,32 @@ const addContractSchema = z.object({
     ),
   category: z.string().min(1, "Category is required").max(100),
   contract_type: z.enum(
-    ["subscription", "contract", "internet_contract", "mobile_contract", "insurance"],
+    [
+      "subscription",
+      "contract",
+      "internet_contract",
+      "mobile_contract",
+      "insurance",
+    ],
     { message: "Contract type is required" },
   ),
   monthly_cost: z.coerce
     .number()
     .positive("Monthly cost must be greater than 0"),
-  billing_cycle: z.enum(
-    ["weekly", "monthly", "quarterly", "yearly"],
-    { message: "Billing cycle is required" },
-  ),
+  billing_cycle: z.enum(["weekly", "monthly", "quarterly", "yearly"], {
+    message: "Billing cycle is required",
+  }),
   currency: z.string().min(1, "Currency is required").max(10),
   start_date: z.string().min(1, "Start date is required"),
   end_date: z.string().optional().or(z.literal("")),
   auto_renewal: z.boolean(),
+  generate_default_reminders: z.boolean().default(true),
   cancellation_notice_days: z.coerce
     .number()
     .min(0, "Cancellation notice days must be 0 or more"),
-  status: z.enum(["active", "cancelled"], { message: "Status is required" }),
+  status: z.enum(["active", "cancelled"], {
+    message: "Status is required",
+  }),
   notes: z.string().optional().or(z.literal("")),
 });
 
@@ -62,6 +71,7 @@ export function AddContractModal({
   onOpenChange,
 }: AddContractModalProps) {
   const createContractMutation = useCreateContract();
+  const generateContractRemindersMutation = useGenerateContractReminders();
 
   const {
     register,
@@ -82,6 +92,7 @@ export function AddContractModal({
       start_date: "",
       end_date: "",
       auto_renewal: true,
+      generate_default_reminders: true,
       cancellation_notice_days: 30,
       status: "active",
       notes: "",
@@ -113,7 +124,16 @@ export function AddContractModal({
       notes: data.notes?.trim() ? data.notes.trim() : null,
     };
 
-    await createContractMutation.mutateAsync(payload);
+    const createdContract = await createContractMutation.mutateAsync(payload);
+
+    if (
+      data.generate_default_reminders &&
+      createdContract.status === "active" &&
+      createdContract.end_date
+    ) {
+      await generateContractRemindersMutation.mutateAsync(createdContract.id);
+    }
+
     closeAndReset();
   };
 
@@ -369,6 +389,18 @@ export function AddContractModal({
               </Label>
             </div>
 
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 px-3 py-2 sm:col-span-2">
+              <input
+                id="generate_default_reminders"
+                type="checkbox"
+                className="h-4 w-4"
+                {...register("generate_default_reminders")}
+              />
+              <Label htmlFor="generate_default_reminders" className="text-sm">
+                Automatically generate default cancellation reminders
+              </Label>
+            </div>
+
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="notes" className="text-xs">
                 Notes
@@ -391,13 +423,22 @@ export function AddContractModal({
             </div>
           )}
 
+          {generateContractRemindersMutation.error && (
+            <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+              {generateContractRemindersMutation.error.message}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               className="flex-1"
               onClick={closeAndReset}
-              disabled={createContractMutation.isPending}
+              disabled={
+                createContractMutation.isPending ||
+                generateContractRemindersMutation.isPending
+              }
             >
               Cancel
             </Button>
@@ -406,9 +447,13 @@ export function AddContractModal({
               type="submit"
               variant="hero"
               className="flex-1"
-              disabled={createContractMutation.isPending}
+              disabled={
+                createContractMutation.isPending ||
+                generateContractRemindersMutation.isPending
+              }
             >
-              {createContractMutation.isPending ? (
+              {createContractMutation.isPending ||
+              generateContractRemindersMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Plus className="h-4 w-4" />

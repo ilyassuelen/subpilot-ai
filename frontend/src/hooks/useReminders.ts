@@ -4,8 +4,11 @@ import {
   createReminder,
   getReminders,
   getRemindersByContract,
+  updateReminderStatuses,
+  generateContractReminders,
+  markReminderAsSent,
 } from "@/lib/api";
-import type { Reminder, ReminderCreateRequest } from "@/lib/types";
+import type { Reminder, ReminderCreateRequest, ReminderGenerateResponse } from "@/lib/types";
 
 export const reminderKeys = {
   all: ["reminders"] as const,
@@ -38,6 +41,46 @@ export function useCreateReminder() {
       queryClient.invalidateQueries({ queryKey: reminderKeys.all });
       queryClient.invalidateQueries({
         queryKey: reminderKeys.byContract(createdReminder.contract_id),
+      });
+    },
+  });
+}
+
+export function useUpdateReminderStatuses() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateReminderStatuses,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reminderKeys.all });
+    },
+  });
+}
+
+export function useGenerateContractReminders() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (contractId: number): Promise<ReminderGenerateResponse> =>
+      generateContractReminders(contractId),
+    onSuccess: (_, contractId) => {
+      queryClient.invalidateQueries({ queryKey: reminderKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: reminderKeys.byContract(contractId),
+      });
+    },
+  });
+}
+
+export function useMarkReminderAsSent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (reminderId: number) => markReminderAsSent(reminderId),
+    onSuccess: (updatedReminder) => {
+      queryClient.invalidateQueries({ queryKey: reminderKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: reminderKeys.byContract(updatedReminder.contract_id),
       });
     },
   });

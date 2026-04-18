@@ -68,6 +68,11 @@ export type ReminderCreateRequest = {
   channel: string;
 };
 
+export type ReminderGenerateResponse = {
+  generated_count: number;
+  reminders: Reminder[];
+};
+
 export type Cancellation = {
   id: number;
   contract_id: number;
