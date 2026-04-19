@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BrainCircuit,
   FileText,
@@ -79,7 +79,8 @@ export function CancellationsPage() {
   const [filter, setFilter] = useState("all");
   const [generateOpen, setGenerateOpen] = useState(false);
   const [step, setStep] = useState<"form" | "preview" | "email">("form");
-  const [activeCancellation, setActiveCancellation] = useState<Cancellation | null>(null);
+  const [activeCancellation, setActiveCancellation] =
+    useState<Cancellation | null>(null);
   const [emailPreviewId, setEmailPreviewId] = useState(0);
 
   const {
@@ -93,15 +94,23 @@ export function CancellationsPage() {
     isLoading: contractsLoading,
   } = useContracts();
 
+  const activeContracts = useMemo(
+    () => contracts.filter((contract) => contract.status === "active"),
+    [contracts],
+  );
+
   const generateMutation = useGenerateCancellation();
   const approveMutation = useApproveCancellation();
   const cancelMutation = useCancelCancellation();
   const markSentMutation = useMarkCancellationSent();
 
-  const { data: emailPreview, isLoading: loadingEmail } = useEmailPreview(emailPreviewId);
+  const { data: emailPreview, isLoading: loadingEmail } =
+    useEmailPreview(emailPreviewId);
 
   const contractMap = useMemo(() => {
-    return new Map<number, Contract>(contracts.map((contract) => [contract.id, contract]));
+    return new Map<number, Contract>(
+      contracts.map((contract) => [contract.id, contract]),
+    );
   }, [contracts]);
 
   const filtered = useMemo(() => {
@@ -117,6 +126,7 @@ export function CancellationsPage() {
     formState: { errors },
     reset,
     watch,
+    setValue,
   } = useForm<CancellationFormData>({
     resolver: zodResolver(cancellationFormSchema),
     defaultValues: {
@@ -134,6 +144,18 @@ export function CancellationsPage() {
   const selectedContractId = watch("contract_id");
   const selectedContract =
     selectedContractId > 0 ? contractMap.get(Number(selectedContractId)) : null;
+
+  useEffect(() => {
+    if (!selectedContract) {
+      setValue("provider_email", "", { shouldValidate: true });
+      return;
+    }
+
+    setValue("provider_email", selectedContract.provider_email ?? "", {
+      shouldValidate: true,
+      shouldDirty: false,
+    });
+  }, [selectedContract, setValue]);
 
   const openGenerateModal = () => {
     setGenerateOpen(true);
@@ -220,13 +242,19 @@ export function CancellationsPage() {
   };
 
   const emailTo = emailPreview?.to ?? activeCancellation?.provider_email ?? "";
-  const emailSubject = emailPreview?.subject ?? activeCancellation?.subject ?? "";
-  const emailBody = emailPreview?.body ?? activeCancellation?.final_message ?? "";
+  const emailSubject =
+    emailPreview?.subject ?? activeCancellation?.subject ?? "";
+  const emailBody =
+    emailPreview?.body ?? activeCancellation?.final_message ?? "";
   const mailtoLink =
     emailPreview?.mailto_link ??
     `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(
       emailSubject,
     )}&body=${encodeURIComponent(emailBody)}`;
+
+  const openEmailApp = () => {
+    window.location.href = mailtoLink;
+  };
 
   return (
     <div className="space-y-6">
@@ -239,6 +267,7 @@ export function CancellationsPage() {
             Manage your AI-generated cancellation requests.
           </p>
         </div>
+
         <Button variant="hero" size="sm" onClick={openGenerateModal}>
           <BrainCircuit className="h-4 w-4" />
           Generate Cancellation
@@ -298,7 +327,8 @@ export function CancellationsPage() {
 
                     <div>
                       <div className="font-[var(--font-display)] font-semibold">
-                        {relatedContract?.title ?? `Contract #${cancellation.contract_id}`}
+                        {relatedContract?.title ??
+                          `Contract #${cancellation.contract_id}`}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{cancellation.provider_name ?? "-"}</span>
@@ -320,7 +350,9 @@ export function CancellationsPage() {
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColors[cancellation.status]}`}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        statusColors[cancellation.status]
+                      }`}
                     >
                       {cancellation.status}
                     </span>
@@ -334,6 +366,7 @@ export function CancellationsPage() {
                           >
                             <Edit className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
+
                           <button
                             onClick={async () => {
                               const result = await approveMutation.mutateAsync(
@@ -353,7 +386,9 @@ export function CancellationsPage() {
 
                       {cancellation.status === "approved" && (
                         <button
-                          onClick={() => openEmailPreviewForExisting(cancellation)}
+                          onClick={() =>
+                            openEmailPreviewForExisting(cancellation)
+                          }
                           className="cursor-pointer rounded-lg p-1.5 hover:bg-muted"
                         >
                           <Mail className="h-3.5 w-3.5 text-primary" />
@@ -381,7 +416,10 @@ export function CancellationsPage() {
                 </DialogHeader>
               </div>
 
-              <form onSubmit={handleSubmit(onGenerate)} className="space-y-4 p-6">
+              <form
+                onSubmit={handleSubmit(onGenerate)}
+                className="space-y-4 p-6"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 space-y-2">
                     <Label className="text-xs">Contract</Label>
@@ -391,7 +429,7 @@ export function CancellationsPage() {
                       disabled={contractsLoading}
                     >
                       <option value={0}>Select a contract</option>
-                      {contracts.map((contract) => (
+                      {activeContracts.map((contract) => (
                         <option key={contract.id} value={contract.id}>
                           {contract.title} — {contract.provider_name}
                         </option>
@@ -495,7 +533,9 @@ export function CancellationsPage() {
                   </div>
 
                   <div className="col-span-2 space-y-2">
-                    <Label className="text-xs">Provider Address (optional)</Label>
+                    <Label className="text-xs">
+                      Provider Address (optional)
+                    </Label>
                     <Input
                       {...register("provider_address")}
                       placeholder="Provider street, ZIP code, City"
@@ -504,18 +544,35 @@ export function CancellationsPage() {
                   </div>
                 </div>
 
+                {activeContracts.length === 0 && (
+                  <div className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">
+                    No active contracts available. Create an active contract
+                    first.
+                  </div>
+                )}
+
+                {generateMutation.error && (
+                  <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+                    {generateMutation.error.message}
+                  </div>
+                )}
+
                 <Button
                   type="submit"
                   variant="hero"
                   className="w-full"
-                  disabled={generateMutation.isPending}
+                  disabled={
+                    generateMutation.isPending || activeContracts.length === 0
+                  }
                 >
                   {generateMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <BrainCircuit className="h-4 w-4" />
                   )}
-                  {generateMutation.isPending ? "Generating..." : "Generate Draft"}
+                  {generateMutation.isPending
+                    ? "Generating..."
+                    : "Generate Draft"}
                 </Button>
               </form>
             </>
@@ -539,7 +596,11 @@ export function CancellationsPage() {
                   </h4>
 
                   {[
-                    ["Contract", contractMap.get(activeCancellation.contract_id)?.title ?? "-"],
+                    [
+                      "Contract",
+                      contractMap.get(activeCancellation.contract_id)?.title ??
+                        "-",
+                    ],
                     ["Provider", activeCancellation.provider_name ?? "-"],
                     ["Language", formatLanguage(activeCancellation.language)],
                     ["Customer", activeCancellation.customer_name ?? "-"],
@@ -582,7 +643,11 @@ export function CancellationsPage() {
               </div>
 
               <div className="flex gap-2 border-t border-border p-5">
-                <Button variant="outline" size="sm" onClick={() => setStep("form")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStep("form")}
+                >
                   <Edit className="h-4 w-4" />
                   Edit
                 </Button>
@@ -639,7 +704,9 @@ export function CancellationsPage() {
                     </div>
 
                     <div className="flex items-center gap-3 text-sm">
-                      <span className="w-12 text-muted-foreground">Subject:</span>
+                      <span className="w-12 text-muted-foreground">
+                        Subject:
+                      </span>
                       <span className="font-medium">{emailSubject}</span>
                     </div>
 
@@ -650,11 +717,14 @@ export function CancellationsPage() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="coral" className="w-full" asChild>
-                    <a href={mailtoLink}>
-                      <ExternalLink className="h-4 w-4" />
-                      Open Email App
-                    </a>
+                  <Button
+                    variant="coral"
+                    className="w-full"
+                    onClick={openEmailApp}
+                    disabled={!emailTo || !emailSubject || !emailBody}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open Email App
                   </Button>
 
                   <Button

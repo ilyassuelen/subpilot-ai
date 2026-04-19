@@ -122,9 +122,9 @@ def get_draft_cancellation_by_contract(db: Session, contract_id: int) -> Cancell
 
 
 def generate_cancellation_draft(
-        db: Session,
-        contract: Contract,
-        request_data: CancellationGenerateRequest,
+    db: Session,
+    contract: Contract,
+    request_data: CancellationGenerateRequest,
 ) -> CancellationRequest:
     """Generate and persist a cancellation draft for a contract using form input."""
     existing_draft = get_draft_cancellation_by_contract(db, contract.id)
@@ -201,7 +201,11 @@ def generate_cancellation_draft(
 
 def get_all_cancellation_requests(db: Session) -> list[CancellationRequest]:
     """Return all cancellation requests stored in the database."""
-    return db.query(CancellationRequest).all()
+    return (
+        db.query(CancellationRequest)
+        .order_by(CancellationRequest.created_at.desc())
+        .all()
+    )
 
 
 def get_cancellation_request_by_id(db: Session, cancellation_id: int) -> CancellationRequest | None:
