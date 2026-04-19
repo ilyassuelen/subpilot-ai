@@ -646,7 +646,23 @@ export function CancellationsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setStep("form")}
+                  onClick={() => {
+                      if (!activeCancellation) return;
+
+                      reset({
+                        contract_id: activeCancellation.contract_id,
+                        language: activeCancellation.language as "de" | "en",
+                        customer_name: activeCancellation.customer_name ?? "",
+                        customer_number: activeCancellation.customer_number ?? "",
+                        customer_address: activeCancellation.customer_address ?? "",
+                        customer_email: activeCancellation.customer_email ?? "",
+                        provider_email: activeCancellation.provider_email ?? "",
+                        provider_address: activeCancellation.provider_address ?? "",
+                      });
+
+                      setEmailPreviewId(0);
+                      setStep("form");
+                  }}
                 >
                   <Edit className="h-4 w-4" />
                   Edit
