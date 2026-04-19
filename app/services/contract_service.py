@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.models.contract import Contract
 from app.schemas.contract import ContractCreate, ContractUpdate
+from app.models.action_log import ActionLog
+from app.models.cancellation import CancellationRequest
+from app.models.reminder import Reminder
 
 
 def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
@@ -71,11 +74,39 @@ def update_contract(db: Session, contract_id: int, contract_data: ContractUpdate
 
 
 def delete_contract(db: Session, contract_id: int) -> bool:
-    """Delete a contract by ID and return True on success, otherwise False."""
+    """Delete a contract by ID together with related reminders, cancellations, and action logs."""
     contract = get_contract_by_id(db, contract_id)
 
     if not contract:
         return False
+
+    reminder_ids = [
+        reminder.id
+        for reminder in db.query(Reminder).filter(Reminder.contract_id == contract_id).all()
+    ]
+    cancellation_ids = [
+        cancellation.id
+        for cancellation in db.query(CancellationRequest).filter(
+            CancellationRequest.contract_id == contract_id
+        ).all()
+    ]
+
+    db.query(ActionLog).filter(
+        ActionLog.entity_type == "contract",
+        ActionLog.entity_id == contract_id,
+    ).delete(synchronize_session=False)
+
+    if reminder_ids:
+        db.query(ActionLog).filter(
+            ActionLog.entity_type == "reminder",
+            ActionLog.entity_id.in_(reminder_ids),
+        ).delete(synchronize_session=False)
+
+    if cancellation_ids:
+        db.query(ActionLog).filter(
+            ActionLog.entity_type == "cancellation",
+            ActionLog.entity_id.in_(cancellation_ids),
+        ).delete(synchronize_session=False)
 
     db.delete(contract)
     db.commit()

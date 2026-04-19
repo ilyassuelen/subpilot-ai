@@ -12,7 +12,10 @@ class Reminder(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
-    contract_id: Mapped[int] = mapped_column(ForeignKey("contracts.id"), nullable=False)
+    contract_id: Mapped[int] = mapped_column(
+        ForeignKey("contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     reminder_type: Mapped[str] = mapped_column(String(100), nullable=False)
     message: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -26,4 +29,4 @@ class Reminder(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    contract = relationship("Contract")
+    contract = relationship("Contract", back_populates="reminders")

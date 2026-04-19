@@ -1,7 +1,7 @@
 from datetime import datetime, date
 
 from sqlalchemy import String, Float, Integer, Date, DateTime, Boolean, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
@@ -26,3 +26,17 @@ class Contract(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    reminders = relationship(
+        "Reminder",
+        back_populates="contract",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    cancellations = relationship(
+        "CancellationRequest",
+        back_populates="contract",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

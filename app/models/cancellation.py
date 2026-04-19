@@ -12,7 +12,10 @@ class CancellationRequest(Base):
     __tablename__ = "cancellation_requests"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    contract_id: Mapped[int] = mapped_column(ForeignKey("contracts.id"), nullable=False)
+    contract_id: Mapped[int] = mapped_column(
+        ForeignKey("contracts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="de")
 
@@ -33,4 +36,4 @@ class CancellationRequest(Base):
     sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    contract = relationship("Contract")
+    contract = relationship("Contract", back_populates="cancellations")
