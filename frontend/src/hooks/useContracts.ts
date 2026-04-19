@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createContract, getContracts, updateContract } from "@/lib/api";
+import { createContract, deleteContract, getContracts, updateContract } from "@/lib/api";
 import type { Contract, ContractCreateRequest } from "@/lib/types";
 
 export const contractKeys = {
@@ -37,6 +37,17 @@ export function useUpdateContract() {
       contractId: number;
       payload: ContractCreateRequest;
     }) => updateContract(contractId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all });
+    },
+  });
+}
+
+export function useDeleteContract() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (contractId: number) => deleteContract(contractId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: contractKeys.all });
     },

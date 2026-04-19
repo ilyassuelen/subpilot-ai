@@ -9,6 +9,8 @@ import {
   Edit,
   BrainCircuit,
   Bell,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddContractModal } from "@/components/contracts/AddContractModal";
 import { EditContractModal } from "@/components/contracts/EditContractModal";
-import { useContracts } from "@/hooks/useContracts";
+import { useContracts, useDeleteContract } from "@/hooks/useContracts";
 import type { Contract } from "@/lib/types";
 
 function formatCurrency(
@@ -80,9 +82,12 @@ export function ContractsPage() {
   const [search, setSearch] = useState("");
   const [detailContract, setDetailContract] = useState<Contract | null>(null);
   const [editContract, setEditContract] = useState<Contract | null>(null);
+  const [deleteContractTarget, setDeleteContractTarget] =
+    useState<Contract | null>(null);
   const [addContractOpen, setAddContractOpen] = useState(false);
 
   const { data: contracts = [], isLoading, error } = useContracts();
+  const deleteContractMutation = useDeleteContract();
 
   const filtered = useMemo(() => {
     return contracts.filter((contract) => {
@@ -119,6 +124,22 @@ export function ContractsPage() {
       setDetailContract(null);
     }
     navigate({ to: "/dashboard/reminders" });
+  };
+
+  const handleDeleteContract = async () => {
+    if (!deleteContractTarget) return;
+
+    await deleteContractMutation.mutateAsync(deleteContractTarget.id);
+
+    if (detailContract?.id === deleteContractTarget.id) {
+      setDetailContract(null);
+    }
+
+    if (editContract?.id === deleteContractTarget.id) {
+      setEditContract(null);
+    }
+
+    setDeleteContractTarget(null);
   };
 
   return (
@@ -307,6 +328,13 @@ export function ContractsPage() {
                         </button>
 
                         <button
+                          onClick={() => setDeleteContractTarget(contract)}
+                          className="cursor-pointer rounded-lg p-1.5 hover:bg-muted"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+
+                        <button
                           onClick={handleGenerateCancellation}
                           className="cursor-pointer rounded-lg p-1.5 hover:bg-muted"
                         >
@@ -395,6 +423,18 @@ export function ContractsPage() {
                   <Bell className="h-3 w-3" />
                   Remind
                 </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDeleteContractTarget(contract);
+                  }}
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
               </div>
             </div>
           ))}
@@ -473,6 +513,67 @@ export function ContractsPage() {
                   >
                     <Bell className="h-4 w-4" />
                     Add Reminder
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteContractTarget}
+        onOpenChange={(open) => !open && setDeleteContractTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          {deleteContractTarget && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Delete Contract</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-foreground">
+                    {deleteContractTarget.title}
+                  </span>
+                  ?
+                </p>
+
+                <p className="text-sm text-muted-foreground">
+                  This will also permanently remove all related reminders and
+                  cancellation drafts.
+                </p>
+
+                {deleteContractMutation.error && (
+                  <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+                    {deleteContractMutation.error.message}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setDeleteContractTarget(null)}
+                    disabled={deleteContractMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={handleDeleteContract}
+                    disabled={deleteContractMutation.isPending}
+                  >
+                    {deleteContractMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Delete
                   </Button>
                 </div>
               </div>

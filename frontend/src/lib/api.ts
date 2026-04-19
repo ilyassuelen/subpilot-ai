@@ -88,6 +88,14 @@ export function updateContract(
   });
 }
 
+export function deleteContract(
+  contractId: number,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/contracts/${contractId}`, {
+    method: "DELETE",
+  });
+}
+
 /* =========================
    Reminders
    ========================= */
