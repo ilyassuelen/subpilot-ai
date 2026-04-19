@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddContractModal } from "@/components/contracts/AddContractModal";
+import { EditContractModal } from "@/components/contracts/EditContractModal";
 import { useContracts } from "@/hooks/useContracts";
 import type { Contract } from "@/lib/types";
 
@@ -78,6 +79,7 @@ export function ContractsPage() {
   const [filter, setFilter] = useState<"all" | "active" | "cancelled">("all");
   const [search, setSearch] = useState("");
   const [detailContract, setDetailContract] = useState<Contract | null>(null);
+  const [editContract, setEditContract] = useState<Contract | null>(null);
   const [addContractOpen, setAddContractOpen] = useState(false);
 
   const { data: contracts = [], isLoading, error } = useContracts();
@@ -85,7 +87,8 @@ export function ContractsPage() {
   const filtered = useMemo(() => {
     return contracts.filter((contract) => {
       if (filter === "active" && contract.status !== "active") return false;
-      if (filter === "cancelled" && contract.status !== "cancelled") return false;
+      if (filter === "cancelled" && contract.status !== "cancelled")
+        return false;
 
       if (search) {
         const query = search.toLowerCase();
@@ -130,7 +133,11 @@ export function ContractsPage() {
           </p>
         </div>
 
-        <Button variant="hero" size="sm" onClick={() => setAddContractOpen(true)}>
+        <Button
+          variant="hero"
+          size="sm"
+          onClick={() => setAddContractOpen(true)}
+        >
           <Plus className="h-4 w-4" />
           Add Contract
         </Button>
@@ -275,7 +282,9 @@ export function ContractsPage() {
 
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(contract.status)}`}
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
+                          contract.status,
+                        )}`}
                       >
                         {contract.status}
                       </span>
@@ -291,7 +300,7 @@ export function ContractsPage() {
                         </button>
 
                         <button
-                          onClick={() => setDetailContract(contract)}
+                          onClick={() => setEditContract(contract)}
                           className="cursor-pointer rounded-lg p-1.5 hover:bg-muted"
                         >
                           <Edit className="h-3.5 w-3.5 text-muted-foreground" />
@@ -333,7 +342,9 @@ export function ContractsPage() {
                 </div>
 
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getUrgencyBadgeClass(contract.urgency_status)}`}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getUrgencyBadgeClass(
+                    contract.urgency_status,
+                  )}`}
                 >
                   {contract.urgency_status}
                 </span>
@@ -469,6 +480,12 @@ export function ContractsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <EditContractModal
+        open={!!editContract}
+        onOpenChange={(open) => !open && setEditContract(null)}
+        contract={editContract}
+      />
 
       <AddContractModal
         open={addContractOpen}

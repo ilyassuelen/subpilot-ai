@@ -78,6 +78,16 @@ export function createContract(
   });
 }
 
+export function updateContract(
+  contractId: number,
+  payload: ContractCreateRequest,
+): Promise<Contract> {
+  return apiFetch<Contract>(`/contracts/${contractId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 /* =========================
    Reminders
    ========================= */
