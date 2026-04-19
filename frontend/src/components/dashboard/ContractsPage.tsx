@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddContractModal } from "@/components/contracts/AddContractModal";
 import { EditContractModal } from "@/components/contracts/EditContractModal";
+import { ContractDetailsModal } from "@/components/contracts/ContractDetailsModal";
 import { useContracts, useDeleteContract } from "@/hooks/useContracts";
 import type { Contract } from "@/lib/types";
 
@@ -113,17 +114,13 @@ export function ContractsPage() {
   }, [contracts, filter, search]);
 
   const handleGenerateCancellation = () => {
-    if (detailContract) {
       setDetailContract(null);
-    }
-    navigate({ to: "/dashboard/cancellations" });
+      navigate({ to: "/dashboard/cancellations" });
   };
 
   const handleAddReminder = () => {
-    if (detailContract) {
       setDetailContract(null);
-    }
-    navigate({ to: "/dashboard/reminders" });
+      navigate({ to: "/dashboard/reminders" });
   };
 
   const handleDeleteContract = async () => {
@@ -441,85 +438,13 @@ export function ContractsPage() {
         </div>
       )}
 
-      <Dialog
+      <ContractDetailsModal
         open={!!detailContract}
         onOpenChange={(open) => !open && setDetailContract(null)}
-      >
-        <DialogContent className="sm:max-w-lg">
-          {detailContract && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3 font-[var(--font-display)]">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-sm font-bold text-primary-foreground">
-                    {detailContract.provider_name[0]}
-                  </div>
-                  {detailContract.title}
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="mt-4 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    ["Provider", detailContract.provider_name],
-                    ["Category", detailContract.category],
-                    [
-                      "Cost per Billing Cycle",
-                      formatCurrency(
-                        detailContract.monthly_cost,
-                        detailContract.currency,
-                      ),
-                    ],
-                    ["Billing", detailContract.billing_cycle],
-                    ["Start Date", formatDate(detailContract.start_date)],
-                    ["End Date", formatDate(detailContract.end_date)],
-                    [
-                      "Cancel Deadline",
-                      formatDate(detailContract.cancellation_deadline),
-                    ],
-                    ["Status", detailContract.status],
-                    ["Urgency", detailContract.urgency_status],
-                    [
-                      "Auto Renewal",
-                      detailContract.auto_renewal ? "Yes" : "No",
-                    ],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-xl bg-muted/40 p-3">
-                      <div className="text-[10px] text-muted-foreground">
-                        {label}
-                      </div>
-                      <div className="mt-0.5 text-sm font-semibold capitalize">
-                        {value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="hero"
-                    size="sm"
-                    className="flex-1"
-                    onClick={handleGenerateCancellation}
-                  >
-                    <BrainCircuit className="h-4 w-4" />
-                    Generate Cancellation
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={handleAddReminder}
-                  >
-                    <Bell className="h-4 w-4" />
-                    Add Reminder
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+        contract={detailContract}
+        onGenerateCancellation={handleGenerateCancellation}
+        onAddReminder={handleAddReminder}
+      />
 
       <Dialog
         open={!!deleteContractTarget}
