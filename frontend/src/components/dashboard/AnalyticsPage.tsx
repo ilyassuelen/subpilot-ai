@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  BarChart3,
   TrendingUp,
   Calendar,
   AlertTriangle,
@@ -10,7 +9,10 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useContracts } from "@/hooks/useContracts";
-import type { Contract } from "@/lib/types";
+import {
+  buildRecurringTrend,
+  getNormalizedMonthlyCost,
+} from "@/lib/contractAnalytics";
 
 function formatCurrency(
   amount: number,
@@ -21,14 +23,6 @@ function formatCurrency(
     style: "currency",
     currency,
   }).format(amount);
-}
-
-function getNormalizedMonthlyCost(contract: Contract) {
-  if (contract.billing_cycle === "weekly") return (contract.monthly_cost * 52) / 12;
-  if (contract.billing_cycle === "monthly") return contract.monthly_cost;
-  if (contract.billing_cycle === "quarterly") return contract.monthly_cost / 3;
-  if (contract.billing_cycle === "yearly") return contract.monthly_cost / 12;
-  return contract.monthly_cost;
 }
 
 export function AnalyticsPage() {
@@ -46,20 +40,35 @@ export function AnalyticsPage() {
   );
 
   const recurringCost = useMemo(
-    () => active.reduce((sum, contract) => sum + getNormalizedMonthlyCost(contract), 0),
+    () =>
+      active.reduce(
+        (sum, contract) => sum + getNormalizedMonthlyCost(contract),
+        0,
+      ),
     [active],
   );
 
   const topServices = useMemo(() => {
-    const total = active.reduce((sum, contract) => sum + getNormalizedMonthlyCost(contract), 0);
+    const total = active.reduce(
+      (sum, contract) => sum + getNormalizedMonthlyCost(contract),
+      0,
+    );
 
     return [...active]
-      .sort((a, b) => getNormalizedMonthlyCost(b) - getNormalizedMonthlyCost(a))
+      .sort(
+        (a, b) => getNormalizedMonthlyCost(b) - getNormalizedMonthlyCost(a),
+      )
       .slice(0, 5)
       .map((contract) => ({
         name: contract.title,
-        cost: formatCurrency(getNormalizedMonthlyCost(contract), contract.currency),
-        pct: total > 0 ? Math.round((getNormalizedMonthlyCost(contract) / total) * 100) : 0,
+        cost: formatCurrency(
+          getNormalizedMonthlyCost(contract),
+          contract.currency,
+        ),
+        pct:
+          total > 0
+            ? Math.round((getNormalizedMonthlyCost(contract) / total) * 100)
+            : 0,
       }));
   }, [active]);
 
@@ -83,7 +92,11 @@ export function AnalyticsPage() {
       { label: "Critical", count: counts.critical, color: "bg-coral" },
       { label: "Warning", count: counts.warning, color: "bg-warning" },
       { label: "Safe", count: counts.safe, color: "bg-success" },
-      { label: "No Deadline", count: counts.no_deadline, color: "bg-muted-foreground" },
+      {
+        label: "No Deadline",
+        count: counts.no_deadline,
+        color: "bg-muted-foreground",
+      },
     ];
   }, [active]);
 
@@ -100,10 +113,14 @@ export function AnalyticsPage() {
     const categories: Record<string, number> = {};
     active.forEach((contract) => {
       categories[contract.category] =
-        (categories[contract.category] || 0) + getNormalizedMonthlyCost(contract);
+        (categories[contract.category] || 0) +
+        getNormalizedMonthlyCost(contract);
     });
 
-    const topCategory = Object.entries(categories).sort(([, a], [, b]) => b - a)[0];
+    const topCategory = Object.entries(categories).sort(
+      ([, a], [, b]) => b - a,
+    )[0];
+
     const topCategoryPct =
       topCategory && recurringCost > 0
         ? Math.round((topCategory[1] / recurringCost) * 100)
@@ -131,15 +148,20 @@ export function AnalyticsPage() {
     ];
   }, [active, cancelled.length, recurringCost]);
 
-  const recurringSpending = [
-    { month: "Oct", amount: Math.round(recurringCost * 0.82) || 0 },
-    { month: "Nov", amount: Math.round(recurringCost * 0.88) || 0 },
-    { month: "Dec", amount: Math.round(recurringCost * 0.91) || 0 },
-    { month: "Jan", amount: Math.round(recurringCost * 0.95) || 0 },
-    { month: "Feb", amount: Math.round(recurringCost * 0.98) || 0 },
-    { month: "Mar", amount: Math.round(recurringCost) || 0 },
-  ];
-  const maxSpend = Math.max(...recurringSpending.map((month) => month.amount), 1);
+  const monthsCount =
+    period === "1M" ? 1 : period === "3M" ? 3 : period === "6M" ? 6 : 12;
+
+  const recurringSpending = useMemo(() => {
+    return buildRecurringTrend(active, monthsCount);
+  }, [active, monthsCount]);
+
+  const trendMin = useMemo(() => {
+    return Math.min(...recurringSpending.points.map((point) => point.amount));
+  }, [recurringSpending]);
+
+  const trendRange = useMemo(() => {
+    return Math.max(recurringSpending.maxAmount - trendMin, 1);
+  }, [recurringSpending, trendMin]);
 
   return (
     <div className="space-y-6">
@@ -218,7 +240,9 @@ export function AnalyticsPage() {
               </div>
             )}
             <div className="mt-1 flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">{kpi.label}</span>
+              <span className="text-xs text-muted-foreground">
+                {kpi.label}
+              </span>
               <span
                 className={`flex items-center gap-0.5 text-xs ${
                   kpi.up ? "text-coral" : "text-muted-foreground"
@@ -237,21 +261,37 @@ export function AnalyticsPage() {
           <h3 className="mb-6 font-[var(--font-display)] font-bold">
             Spending Trend
           </h3>
-          <div className="flex h-48 items-end gap-4">
-            {recurringSpending.map((month) => (
-              <div key={month.month} className="flex flex-1 flex-col items-center gap-2">
-                <span className="text-xs font-semibold">
-                  {formatCurrency(month.amount)}
-                </span>
+
+          <div className="flex h-56 items-end gap-4">
+            {recurringSpending.points.map((point) => {
+              const normalizedHeight =
+                trendRange === 0 ? 1 : (point.amount - trendMin) / trendRange;
+
+              const barHeight =
+                point.amount > 0 ? 40 + normalizedHeight * 60 : 0;
+
+              return (
                 <div
-                  className="relative w-full overflow-hidden rounded-t-lg"
-                  style={{ height: `${(month.amount / maxSpend) * 100}%` }}
+                  key={point.label}
+                  className="flex h-full flex-1 flex-col items-center justify-end gap-2"
                 >
-                  <div className="absolute inset-0 rounded-t-lg bg-gradient-primary opacity-80" />
+                  <span className="text-xs font-semibold">
+                    {formatCurrency(point.amount)}
+                  </span>
+
+                  <div
+                    className="relative w-full max-w-[56px] overflow-hidden rounded-t-lg"
+                    style={{ height: `${barHeight}%` }}
+                  >
+                    <div className="absolute inset-0 rounded-t-lg bg-gradient-primary opacity-85" />
+                  </div>
+
+                  <span className="text-xs text-muted-foreground">
+                    {point.label}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">{month.month}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -271,7 +311,9 @@ export function AnalyticsPage() {
                     className={`h-full rounded-full ${urgency.color}`}
                     style={{
                       width: `${
-                        totalUrgency > 0 ? (urgency.count / totalUrgency) * 100 : 0
+                        totalUrgency > 0
+                          ? (urgency.count / totalUrgency) * 100
+                          : 0
                       }%`,
                     }}
                   />
@@ -297,13 +339,17 @@ export function AnalyticsPage() {
             <div className="space-y-3">
               {topServices.map((service, index) => (
                 <div key={service.name} className="flex items-center gap-3">
-                  <span className="w-4 text-xs text-muted-foreground">{index + 1}</span>
+                  <span className="w-4 text-xs text-muted-foreground">
+                    {index + 1}
+                  </span>
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary text-xs font-bold text-primary-foreground">
                     {service.name[0]}
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between">
-                      <span className="text-sm font-semibold">{service.name}</span>
+                      <span className="text-sm font-semibold">
+                        {service.name}
+                      </span>
                       <span className="text-sm font-bold">{service.cost}</span>
                     </div>
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -312,7 +358,10 @@ export function AnalyticsPage() {
                         style={{
                           width: `${
                             (service.pct /
-                              Math.max(...topServices.map((item) => item.pct), 1)) *
+                              Math.max(
+                                ...topServices.map((item) => item.pct),
+                                1,
+                              )) *
                             100
                           }%`,
                         }}

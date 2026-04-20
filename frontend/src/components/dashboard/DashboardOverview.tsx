@@ -16,7 +16,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useContracts } from "@/hooks/useContracts";
 import { useReminders } from "@/hooks/useReminders";
 import { useActions } from "@/hooks/useActions";
-import type { ActionLog, Contract } from "@/lib/types";
+import type { ActionLog } from "@/lib/types";
+import {
+  buildRecurringTrend,
+  getNormalizedMonthlyCost,
+} from "@/lib/contractAnalytics";
 
 const actionColors: Record<string, string> = {
   contract: "bg-primary",
@@ -78,51 +82,8 @@ function mapActionTypeToColor(action: ActionLog) {
   return "bg-warning";
 }
 
-function getNormalizedMonthlyCost(contract: Contract) {
-  if (contract.billing_cycle === "weekly") return (contract.monthly_cost * 52) / 12;
-  if (contract.billing_cycle === "monthly") return contract.monthly_cost;
-  if (contract.billing_cycle === "quarterly") return contract.monthly_cost / 3;
-  if (contract.billing_cycle === "yearly") return contract.monthly_cost / 12;
-  return contract.monthly_cost;
-}
-
-function buildMonthlyTrend(activeContracts: Contract[]) {
-  const currentRecurringTotal = activeContracts.reduce(
-    (sum, contract) => sum + getNormalizedMonthlyCost(contract),
-    0,
-  );
-
-  const multipliers = [
-    0.78, 0.82, 0.8, 0.87, 0.85, 0.84, 0.9, 0.88, 0.94, 0.98, 1.02, 1,
-  ];
-  const months = [
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-    "Jan",
-    "Feb",
-    "Mar",
-  ];
-
-  const values = multipliers.map((multiplier) =>
-    Math.max(0, Math.round(currentRecurringTotal * multiplier)),
-  );
-
-  return {
-    months,
-    values,
-    maxVal: Math.max(...values, 1),
-  };
-}
-
-function buildAttentionIssue(contract: Contract) {
-  switch (contract.urgency_status) {
+function buildAttentionIssue(urgencyStatus: string) {
+  switch (urgencyStatus) {
     case "overdue":
       return "Cancellation deadline already passed";
     case "critical":
@@ -158,12 +119,14 @@ export function DashboardOverview() {
     [contracts],
   );
 
-  const kpis = useMemo(() => {
-    const recurringCost = activeContracts.reduce(
+  const recurringCost = useMemo(() => {
+    return activeContracts.reduce(
       (sum, contract) => sum + getNormalizedMonthlyCost(contract),
       0,
     );
+  }, [activeContracts]);
 
+  const kpis = useMemo(() => {
     const upcomingRenewals = activeContracts.filter(
       (contract) => contract.end_date || contract.cancellation_deadline,
     ).length;
@@ -202,7 +165,7 @@ export function DashboardOverview() {
         gradient: "bg-gradient-card-yellow",
       },
     ];
-  }, [activeContracts, contracts.length, reminders.length]);
+  }, [activeContracts, contracts.length, recurringCost, reminders.length]);
 
   const upcomingCharges = useMemo(() => {
     return activeContracts
@@ -219,8 +182,13 @@ export function DashboardOverview() {
       .slice(0, 5)
       .map((contract) => ({
         name: contract.title,
-        date: formatMonthDay(contract.end_date ?? contract.cancellation_deadline),
-        amount: formatCurrency(getNormalizedMonthlyCost(contract), contract.currency),
+        date: formatMonthDay(
+          contract.end_date ?? contract.cancellation_deadline,
+        ),
+        amount: formatCurrency(
+          getNormalizedMonthlyCost(contract),
+          contract.currency,
+        ),
         urgent: ["critical", "overdue"].includes(contract.urgency_status),
       }));
   }, [activeContracts]);
@@ -244,6 +212,10 @@ export function DashboardOverview() {
       Fitness: "bg-success",
       Handy: "bg-coral",
       Sport: "bg-success",
+      Mobile: "bg-coral",
+      Internet: "bg-warning",
+      Electricity: "bg-warning",
+      Cloud: "bg-chart-4",
     };
 
     return Object.entries(grouped)
@@ -263,17 +235,24 @@ export function DashboardOverview() {
       .slice(0, 3)
       .map((contract) => ({
         name: contract.title,
-        issue: buildAttentionIssue(contract),
+        issue: buildAttentionIssue(contract.urgency_status),
         urgency: contract.urgency_status,
       }));
   }, [activeContracts]);
 
   const recentActions = useMemo(() => actions.slice(0, 4), [actions]);
 
-  const trend = useMemo(
-    () => buildMonthlyTrend(activeContracts),
-    [activeContracts],
-  );
+  const trend = useMemo(() => {
+    return buildRecurringTrend(activeContracts, 12);
+  }, [activeContracts]);
+
+  const trendMin = useMemo(() => {
+      return Math.min(...trend.points.map((point) => point.amount));
+  }, [trend]);
+
+  const trendRange = useMemo(() => {
+      return Math.max(trend.maxAmount - trendMin, 1);
+  }, [trend, trendMin]);
 
   return (
     <div className="space-y-6">
@@ -331,7 +310,9 @@ export function DashboardOverview() {
               </div>
             )}
 
-            <div className="mt-1 text-xs text-muted-foreground">{kpi.label}</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {kpi.label}
+            </div>
           </div>
         ))}
       </div>
@@ -342,23 +323,36 @@ export function DashboardOverview() {
             Recurring Cost Trend
           </h3>
 
-          <div className="flex h-36 items-end gap-2">
-            {trend.values.map((value, index) => (
-              <div
-                key={trend.months[index]}
-                className="flex flex-1 flex-col items-center gap-1.5"
-              >
+          <div className="flex h-48 items-end gap-3">
+            {trend.points.map((point) => {
+              const normalizedHeight =
+                trendRange === 0 ? 1 : (point.amount - trendMin) / trendRange;
+
+              const barHeight =
+                point.amount > 0 ? 40 + normalizedHeight * 60 : 0;
+
+              return (
                 <div
-                  className="relative w-full overflow-hidden rounded-t-md"
-                  style={{ height: `${(value / trend.maxVal) * 100}%` }}
+                  key={point.label}
+                  className="flex h-full flex-1 flex-col items-center justify-end gap-2"
                 >
-                  <div className="absolute inset-0 rounded-t-md bg-gradient-primary opacity-75" />
+                  <span className="text-[10px] font-semibold text-foreground">
+                    {formatCurrency(point.amount)}
+                  </span>
+
+                  <div
+                    className="relative w-full max-w-[48px] overflow-hidden rounded-t-md"
+                    style={{ height: `${barHeight}%` }}
+                  >
+                    <div className="absolute inset-0 rounded-t-md bg-gradient-primary opacity-80" />
+                  </div>
+
+                  <span className="text-[10px] text-muted-foreground">
+                    {point.label}
+                  </span>
                 </div>
-                <span className="text-[9px] text-muted-foreground">
-                  {trend.months[index]}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -381,7 +375,9 @@ export function DashboardOverview() {
                 <div key={category.name}>
                   <div className="mb-1 flex justify-between text-sm">
                     <span>{category.name}</span>
-                    <span className="text-muted-foreground">{category.pct}%</span>
+                    <span className="text-muted-foreground">
+                      {category.pct}%
+                    </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">
                     <div
@@ -496,7 +492,9 @@ export function DashboardOverview() {
                   className="rounded-xl border border-border/50 bg-muted/30 p-3"
                 >
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-sm font-semibold">{contract.name}</span>
+                    <span className="text-sm font-semibold">
+                      {contract.name}
+                    </span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         contract.urgency === "overdue" ||
