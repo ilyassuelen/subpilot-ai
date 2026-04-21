@@ -12,6 +12,20 @@ class UserRegisterRequest(BaseModel):
     address: str = Field(min_length=1, max_length=500)
 
 
+class UserLoginRequest(BaseModel):
+    """Schema for logging in with email and password."""
+
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=255)
+
+
+class TokenResponse(BaseModel):
+    """Schema returned after successful login."""
+
+    access_token: str
+    token_type: str = "bearer"
+
+
 class UserResponse(BaseModel):
     """Schema returned by the API for user data."""
 
