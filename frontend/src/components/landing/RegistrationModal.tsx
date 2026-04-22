@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plane, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Plane, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,14 +13,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRegister } from "@/hooks/useAuth";
 
 const registerSchema = z
   .object({
+    full_name: z
+      .string()
+      .min(1, "Please enter your full name")
+      .max(255, "Full name is too long"),
     email: z.string().email("Please enter a valid email").max(255),
+    address: z
+      .string()
+      .min(1, "Please enter your address")
+      .max(500, "Address is too long"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
-      .max(128),
+      .max(255, "Password is too long"),
     confirm: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirm, {
@@ -40,32 +49,60 @@ export function RegistrationModal({
   onOpenChange,
 }: RegistrationModalProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const registerMutation = useRegister();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
+      full_name: "",
       email: "",
+      address: "",
       password: "",
       confirm: "",
     },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    console.log("Register:", data.email);
+    setSuccessMessage("");
 
-    reset();
-    onOpenChange(false);
+    const result = await registerMutation.mutateAsync({
+      full_name: data.full_name.trim(),
+      email: data.email.trim(),
+      address: data.address.trim(),
+      password: data.password,
+    });
+
+    setSuccessMessage(`Account created successfully for ${result.full_name}.`);
+
+    reset({
+      full_name: "",
+      email: "",
+      address: "",
+      password: "",
+      confirm: "",
+    });
+
+    setShowPassword(false);
+
+    setTimeout(() => {
+      onOpenChange(false);
+      setSuccessMessage("");
+    }, 1200);
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       reset();
       setShowPassword(false);
+      setSuccessMessage("");
+      registerMutation.reset();
     }
 
     onOpenChange(nextOpen);
@@ -92,6 +129,24 @@ export function RegistrationModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-6">
           <div className="space-y-2">
+            <Label htmlFor="reg-full-name" className="text-sm font-medium">
+              Full Name
+            </Label>
+            <Input
+              id="reg-full-name"
+              type="text"
+              placeholder="Full name"
+              {...register("full_name")}
+              className="h-11 rounded-xl"
+            />
+            {errors.full_name && (
+              <p className="text-xs text-destructive">
+                {errors.full_name.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="reg-email" className="text-sm font-medium">
               Email
             </Label>
@@ -104,6 +159,24 @@ export function RegistrationModal({
             />
             {errors.email && (
               <p className="text-xs text-destructive">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reg-address" className="text-sm font-medium">
+              Address
+            </Label>
+            <Input
+              id="reg-address"
+              type="text"
+              placeholder="Street, ZIP code City"
+              {...register("address")}
+              className="h-11 rounded-xl"
+            />
+            {errors.address && (
+              <p className="text-xs text-destructive">
+                {errors.address.message}
+              </p>
             )}
           </div>
 
@@ -159,14 +232,29 @@ export function RegistrationModal({
             )}
           </div>
 
+          {registerMutation.error && (
+            <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+              {registerMutation.error.message}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="flex items-center gap-2 rounded-xl bg-success/10 p-3 text-sm text-success">
+              <CheckCircle2 className="h-4 w-4" />
+              {successMessage}
+            </div>
+          )}
+
           <Button
             type="submit"
             variant="hero"
             size="lg"
             className="mt-2 w-full"
-            disabled={isSubmitting}
+            disabled={registerMutation.isPending}
           >
-            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {registerMutation.isPending && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             Create Account
           </Button>
 

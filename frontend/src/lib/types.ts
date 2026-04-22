@@ -117,3 +117,32 @@ export type CancellationGenerateRequest = {
   provider_email?: string | null;
   provider_address?: string | null;
 };
+
+/* =========================
+   Auth / Users
+   ========================= */
+
+export type RegisterRequest = {
+  full_name: string;
+  email: string;
+  password: string;
+  address: string;
+};
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type TokenResponse = {
+  access_token: string;
+  token_type: string;
+};
+
+export type User = {
+  id: number;
+  full_name: string;
+  email: string;
+  address: string;
+  created_at: string;
+};

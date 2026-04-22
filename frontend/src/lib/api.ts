@@ -8,6 +8,10 @@ import type {
   Reminder,
   ReminderCreateRequest,
   ReminderGenerateResponse,
+  RegisterRequest,
+  LoginRequest,
+  TokenResponse,
+  User,
 } from "./types";
 
 export const API_BASE_URL =
@@ -55,6 +59,33 @@ export async function apiFetch<T>(
   }
 
   return (await response.json()) as T;
+}
+
+/* =========================
+   Auth
+   ========================= */
+
+export function registerUser(payload: RegisterRequest): Promise<User> {
+  return apiFetch<User>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function loginUser(payload: LoginRequest): Promise<TokenResponse> {
+  return apiFetch<TokenResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getCurrentUser(token: string): Promise<User> {
+  return apiFetch<User>("/auth/me", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }
 
 /* =========================
