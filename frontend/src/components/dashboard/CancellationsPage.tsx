@@ -35,6 +35,7 @@ import {
   useMarkCancellationSent,
 } from "@/hooks/useCancellations";
 import { useContracts } from "@/hooks/useContracts";
+import { useCurrentUser } from "@/hooks/useAuth";
 import type { Cancellation, Contract } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -94,6 +95,8 @@ export function CancellationsPage() {
     isLoading: contractsLoading,
   } = useContracts();
 
+  const { data: user } = useCurrentUser();
+
   const activeContracts = useMemo(
     () => contracts.filter((contract) => contract.status === "active"),
     [contracts],
@@ -132,10 +135,10 @@ export function CancellationsPage() {
     defaultValues: {
       contract_id: 0,
       language: "de",
-      customer_name: "",
+      customer_name: user?.full_name ?? "",
       customer_number: "",
-      customer_address: "",
-      customer_email: "",
+      customer_address: user?.address ?? "",
+      customer_email: user?.email ?? "",
       provider_email: "",
       provider_address: "",
     },
@@ -157,18 +160,36 @@ export function CancellationsPage() {
     });
   }, [selectedContract, setValue]);
 
+  useEffect(() => {
+    if (!generateOpen || step !== "form" || !user) return;
+
+    setValue("customer_name", user.full_name ?? "", {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+    setValue("customer_address", user.address ?? "", {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+    setValue("customer_email", user.email ?? "", {
+      shouldDirty: false,
+      shouldValidate: false,
+    });
+  }, [generateOpen, step, user, setValue]);
+
   const openGenerateModal = () => {
     setGenerateOpen(true);
     setStep("form");
     setActiveCancellation(null);
     setEmailPreviewId(0);
+
     reset({
       contract_id: 0,
       language: "de",
-      customer_name: "",
+      customer_name: user?.full_name ?? "",
       customer_number: "",
-      customer_address: "",
-      customer_email: "",
+      customer_address: user?.address ?? "",
+      customer_email: user?.email ?? "",
       provider_email: "",
       provider_address: "",
     });
@@ -223,7 +244,17 @@ export function CancellationsPage() {
     setGenerateOpen(false);
     setActiveCancellation(null);
     setEmailPreviewId(0);
-    reset();
+
+    reset({
+      contract_id: 0,
+      language: "de",
+      customer_name: user?.full_name ?? "",
+      customer_number: "",
+      customer_address: user?.address ?? "",
+      customer_email: user?.email ?? "",
+      provider_email: "",
+      provider_address: "",
+    });
   };
 
   const onCancel = async () => {
@@ -234,7 +265,17 @@ export function CancellationsPage() {
     setGenerateOpen(false);
     setActiveCancellation(null);
     setEmailPreviewId(0);
-    reset();
+
+    reset({
+      contract_id: 0,
+      language: "de",
+      customer_name: user?.full_name ?? "",
+      customer_number: "",
+      customer_address: user?.address ?? "",
+      customer_email: user?.email ?? "",
+      provider_email: "",
+      provider_address: "",
+    });
   };
 
   const copyToClipboard = async (text: string) => {
@@ -647,21 +688,27 @@ export function CancellationsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                      if (!activeCancellation) return;
+                    if (!activeCancellation) return;
 
-                      reset({
-                        contract_id: activeCancellation.contract_id,
-                        language: activeCancellation.language as "de" | "en",
-                        customer_name: activeCancellation.customer_name ?? "",
-                        customer_number: activeCancellation.customer_number ?? "",
-                        customer_address: activeCancellation.customer_address ?? "",
-                        customer_email: activeCancellation.customer_email ?? "",
-                        provider_email: activeCancellation.provider_email ?? "",
-                        provider_address: activeCancellation.provider_address ?? "",
-                      });
+                    reset({
+                      contract_id: activeCancellation.contract_id,
+                      language: activeCancellation.language as "de" | "en",
+                      customer_name:
+                        activeCancellation.customer_name ?? user?.full_name ?? "",
+                      customer_number: activeCancellation.customer_number ?? "",
+                      customer_address:
+                        activeCancellation.customer_address ??
+                        user?.address ??
+                        "",
+                      customer_email:
+                        activeCancellation.customer_email ?? user?.email ?? "",
+                      provider_email: activeCancellation.provider_email ?? "",
+                      provider_address:
+                        activeCancellation.provider_address ?? "",
+                    });
 
-                      setEmailPreviewId(0);
-                      setStep("form");
+                    setEmailPreviewId(0);
+                    setStep("form");
                   }}
                 >
                   <Edit className="h-4 w-4" />
