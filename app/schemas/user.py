@@ -19,6 +19,14 @@ class UserLoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=255)
 
 
+class UserUpdateRequest(BaseModel):
+    """Schema for updating the current user's profile."""
+
+    full_name: str = Field(min_length=1, max_length=255)
+    email: EmailStr
+    address: str = Field(min_length=1, max_length=500)
+
+
 class TokenResponse(BaseModel):
     """Schema returned after successful login."""
 

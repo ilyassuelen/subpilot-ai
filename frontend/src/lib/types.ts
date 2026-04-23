@@ -146,3 +146,9 @@ export type User = {
   address: string;
   created_at: string;
 };
+
+export type UserUpdateRequest = {
+  full_name: string;
+  email: string;
+  address: string;
+};

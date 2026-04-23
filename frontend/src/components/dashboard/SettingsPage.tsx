@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   User,
   Bell,
@@ -8,219 +9,71 @@ import {
   Database,
   Trash2,
   Download,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-
-const sections = [
-  {
-    icon: User,
-    title: "Profile",
-    content: (
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label className="text-xs">Full Name</Label>
-          <Input
-            placeholder="John Doe"
-            className="h-9 rounded-xl"
-            defaultValue="John Doe"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Email</Label>
-          <Input
-            placeholder="john@example.com"
-            className="h-9 rounded-xl"
-            defaultValue="john@example.com"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Address</Label>
-          <Input
-            placeholder="123 Main St"
-            className="h-9 rounded-xl"
-            defaultValue="123 Main St, Berlin"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Phone</Label>
-          <Input
-            placeholder="+49 123 456 7890"
-            className="h-9 rounded-xl"
-          />
-        </div>
-      </div>
-    ),
-  },
-  {
-    icon: Bell,
-    title: "Notification Preferences",
-    content: (
-      <div className="space-y-4">
-        {[
-          [
-            "Email notifications",
-            "Receive renewal and deadline reminders via email.",
-            true,
-          ],
-          [
-            "Push notifications",
-            "Browser push notifications for urgent deadlines.",
-            false,
-          ],
-          [
-            "Weekly digest",
-            "Get a weekly summary of your subscription status.",
-            true,
-          ],
-        ].map(([title, description, defaultChecked]) => (
-          <div
-            key={title as string}
-            className="flex items-center justify-between"
-          >
-            <div>
-              <div className="text-sm font-medium">{title as string}</div>
-              <div className="text-xs text-muted-foreground">
-                {description as string}
-              </div>
-            </div>
-            <Switch defaultChecked={defaultChecked as boolean} />
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    icon: Globe,
-    title: "Language Preferences",
-    content: (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label className="text-xs">Default Language</Label>
-          <select className="h-9 w-full max-w-xs rounded-xl border border-input bg-background px-3 text-sm">
-            <option>English</option>
-            <option>German</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Default Cancellation Language</Label>
-          <select className="h-9 w-full max-w-xs rounded-xl border border-input bg-background px-3 text-sm">
-            <option>Same as interface</option>
-            <option>English</option>
-            <option>German</option>
-          </select>
-        </div>
-      </div>
-    ),
-  },
-  {
-    icon: Shield,
-    title: "Privacy & Security",
-    content: (
-      <div className="space-y-4">
-        {[
-          [
-            "Two-factor authentication",
-            "Add an extra layer of security to your account.",
-            false,
-          ],
-          [
-            "Anonymous analytics sharing",
-            "Help improve SubPilot with anonymous product usage data.",
-            true,
-          ],
-        ].map(([title, description, defaultChecked]) => (
-          <div
-            key={title as string}
-            className="flex items-center justify-between"
-          >
-            <div>
-              <div className="text-sm font-medium">{title as string}</div>
-              <div className="text-xs text-muted-foreground">
-                {description as string}
-              </div>
-            </div>
-            <Switch defaultChecked={defaultChecked as boolean} />
-          </div>
-        ))}
-      </div>
-    ),
-  },
-  {
-    icon: BrainCircuit,
-    title: "AI Settings",
-    content: (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label className="text-xs">AI Generation Mode</Label>
-          <select className="h-9 w-full max-w-xs rounded-xl border border-input bg-background px-3 text-sm">
-            <option>Standard (faster)</option>
-            <option>Enhanced (more detailed)</option>
-          </select>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium">Auto-generate reminders</div>
-            <div className="text-xs text-muted-foreground">
-              Automatically create reminders when adding contracts.
-            </div>
-          </div>
-          <Switch defaultChecked />
-        </div>
-      </div>
-    ),
-  },
-  {
-    icon: Mail,
-    title: "Future Integrations",
-    content: (
-      <div className="space-y-4">
-        {[
-          {
-            name: "Gmail",
-            description: "Auto-detect subscriptions from your inbox.",
-            status: "Coming Soon",
-          },
-          {
-            name: "Outlook",
-            description: "Connect your Microsoft email for scanning.",
-            status: "Coming Soon",
-          },
-          {
-            name: "Apple Mail",
-            description: "Import subscription data from Apple Mail.",
-            status: "Planned",
-          },
-        ].map((integration) => (
-          <div
-            key={integration.name}
-            className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/40 p-3"
-          >
-            <div>
-              <div className="text-sm font-medium">{integration.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {integration.description}
-              </div>
-            </div>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-              {integration.status}
-            </span>
-          </div>
-        ))}
-      </div>
-    ),
-  },
-];
+import { useCurrentUser, useUpdateCurrentUser } from "@/hooks/useAuth";
 
 export function SettingsPage() {
+  const [mounted, setMounted] = useState(false);
+
+  const { data: user, isLoading } = useCurrentUser();
+  const updateUserMutation = useUpdateCurrentUser();
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.full_name);
+      setEmail(user.email);
+      setAddress(user.address);
+    }
+  }, [user]);
+
+  const handleCancelEdit = () => {
+    if (!user) return;
+
+    setFullName(user.full_name);
+    setEmail(user.email);
+    setAddress(user.address);
+    setIsEditingProfile(false);
+  };
+
+  const handleSaveProfile = async () => {
+    await updateUserMutation.mutateAsync({
+      full_name: fullName.trim(),
+      email: email.trim(),
+      address: address.trim(),
+    });
+
+    setIsEditingProfile(false);
+  };
+
+  if (!mounted) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  if (isLoading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
+  if (!user) {
+    return <div className="p-6">No user data found.</div>;
+  }
+
   return (
     <div className="max-w-3xl space-y-6">
       <div>
@@ -232,23 +85,292 @@ export function SettingsPage() {
         </p>
       </div>
 
-      {sections.map((section) => (
-        <div
-          key={section.title}
-          className="rounded-2xl border border-border/50 bg-card p-6 shadow-card"
-        >
-          <div className="mb-5 flex items-center gap-3">
+      <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <section.icon className="h-5 w-5 text-primary" />
+              <User className="h-5 w-5 text-primary" />
             </div>
-            <h2 className="font-[var(--font-display)] font-bold">
-              {section.title}
-            </h2>
+            <h2 className="font-[var(--font-display)] font-bold">Profile</h2>
           </div>
 
-          {section.content}
+          {!isEditingProfile ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingProfile(true)}
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelEdit}
+                disabled={updateUserMutation.isPending}
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+
+              <Button
+                variant="hero"
+                size="sm"
+                onClick={handleSaveProfile}
+                disabled={updateUserMutation.isPending}
+              >
+                <Save className="h-4 w-4" />
+                Save
+              </Button>
+            </div>
+          )}
         </div>
-      ))}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label className="text-xs">Full Name</Label>
+            <Input
+              className="h-9 rounded-xl"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              readOnly={!isEditingProfile}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Email</Label>
+            <Input
+              className="h-9 rounded-xl"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              readOnly={!isEditingProfile}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Address</Label>
+            <Input
+              className="h-9 rounded-xl"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              readOnly={!isEditingProfile}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Phone</Label>
+            <Input
+              placeholder="+49 123 456 7890"
+              className="h-9 rounded-xl"
+              readOnly
+            />
+          </div>
+        </div>
+
+        {updateUserMutation.error && (
+          <div className="mt-4 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+            {updateUserMutation.error.message}
+          </div>
+        )}
+
+        {updateUserMutation.isSuccess && !isEditingProfile && (
+          <div className="mt-4 rounded-xl bg-success/10 p-3 text-sm text-success">
+            Profile updated successfully.
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Bell className="h-5 w-5 text-primary" />
+          </div>
+          <h2 className="font-[var(--font-display)] font-bold">
+            Notification Preferences
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          {[
+            [
+              "Email notifications",
+              "Receive renewal and deadline reminders via email.",
+              true,
+            ],
+            [
+              "Push notifications",
+              "Browser push notifications for urgent deadlines.",
+              false,
+            ],
+            [
+              "Weekly digest",
+              "Get a weekly summary of your subscription status.",
+              true,
+            ],
+          ].map(([title, description, defaultChecked]) => (
+            <div
+              key={title as string}
+              className="flex items-center justify-between"
+            >
+              <div>
+                <div className="text-sm font-medium">{title as string}</div>
+                <div className="text-xs text-muted-foreground">
+                  {description as string}
+                </div>
+              </div>
+              <Switch defaultChecked={defaultChecked as boolean} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Globe className="h-5 w-5 text-primary" />
+          </div>
+          <h2 className="font-[var(--font-display)] font-bold">
+            Language Preferences
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs">Default Language</Label>
+            <select className="h-9 w-full max-w-xs rounded-xl border border-input bg-background px-3 text-sm">
+              <option>English</option>
+              <option>German</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Default Cancellation Language</Label>
+            <select className="h-9 w-full max-w-xs rounded-xl border border-input bg-background px-3 text-sm">
+              <option>Same as interface</option>
+              <option>English</option>
+              <option>German</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <h2 className="font-[var(--font-display)] font-bold">
+            Privacy & Security
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          {[
+            [
+              "Two-factor authentication",
+              "Add an extra layer of security to your account.",
+              false,
+            ],
+            [
+              "Anonymous analytics sharing",
+              "Help improve SubPilot with anonymous product usage data.",
+              true,
+            ],
+          ].map(([title, description, defaultChecked]) => (
+            <div
+              key={title as string}
+              className="flex items-center justify-between"
+            >
+              <div>
+                <div className="text-sm font-medium">{title as string}</div>
+                <div className="text-xs text-muted-foreground">
+                  {description as string}
+                </div>
+              </div>
+              <Switch defaultChecked={defaultChecked as boolean} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <BrainCircuit className="h-5 w-5 text-primary" />
+          </div>
+          <h2 className="font-[var(--font-display)] font-bold">
+            AI Settings
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs">AI Generation Mode</Label>
+            <select className="h-9 w-full max-w-xs rounded-xl border border-input bg-background px-3 text-sm">
+              <option>Standard (faster)</option>
+              <option>Enhanced (more detailed)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium">Auto-generate reminders</div>
+              <div className="text-xs text-muted-foreground">
+                Automatically create reminders when adding contracts.
+              </div>
+            </div>
+            <Switch defaultChecked />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Mail className="h-5 w-5 text-primary" />
+          </div>
+          <h2 className="font-[var(--font-display)] font-bold">
+            Future Integrations
+          </h2>
+        </div>
+
+        <div className="space-y-4">
+          {[
+            {
+              name: "Gmail",
+              description: "Auto-detect subscriptions from your inbox.",
+              status: "Coming Soon",
+            },
+            {
+              name: "Outlook",
+              description: "Connect your Microsoft email for scanning.",
+              status: "Coming Soon",
+            },
+            {
+              name: "Apple Mail",
+              description: "Import subscription data from Apple Mail.",
+              status: "Planned",
+            },
+          ].map((integration) => (
+            <div
+              key={integration.name}
+              className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/40 p-3"
+            >
+              <div>
+                <div className="text-sm font-medium">{integration.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {integration.description}
+                </div>
+              </div>
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                {integration.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
         <div className="mb-5 flex items-center gap-3">

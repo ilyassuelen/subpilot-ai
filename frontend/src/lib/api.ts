@@ -12,6 +12,7 @@ import type {
   LoginRequest,
   TokenResponse,
   User,
+  UserUpdateRequest,
 } from "./types";
 import { getAccessToken } from "./auth";
 
@@ -86,6 +87,13 @@ export function loginUser(payload: LoginRequest): Promise<TokenResponse> {
 export function getCurrentUser(): Promise<User> {
   return apiFetch<User>("/auth/me", {
     method: "GET",
+  });
+}
+
+export function updateCurrentUser(payload: UserUpdateRequest): Promise<User> {
+  return apiFetch<User>("/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
   });
 }
 

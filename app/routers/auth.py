@@ -10,11 +10,13 @@ from app.schemas.user import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    UserUpdateRequest,
 )
 from app.services.user_service import (
     authenticate_user,
     create_user,
     get_user_by_id,
+    update_user_profile,
 )
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -100,3 +102,17 @@ def login_user(user_data: UserLoginRequest, db: Session = Depends(get_db)):
 def get_me(current_user=Depends(get_current_user)):
     """Return the currently authenticated user."""
     return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+def update_me(
+    user_data: UserUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Update the currently authenticated user's profile."""
+    try:
+        user = update_user_profile(db, current_user, user_data)
+        return user
+    except ValueError as exception:
+        raise HTTPException(status_code=400, detail=str(exception)) from exception
