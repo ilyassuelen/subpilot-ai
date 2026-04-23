@@ -11,3 +11,7 @@ export function getAccessToken(): string | null {
 export function removeAccessToken() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
 }
+
+export function isAuthenticated() {
+  return !!getAccessToken();
+}

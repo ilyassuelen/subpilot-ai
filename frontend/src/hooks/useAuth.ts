@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getCurrentUser, loginUser, registerUser } from "@/lib/api";
 import { getAccessToken, removeAccessToken, setAccessToken } from "@/lib/auth";
@@ -21,31 +21,33 @@ export function useRegister() {
 }
 
 export function useLogin() {
+  const queryClient = useQueryClient();
+
   return useMutation<TokenResponse, Error, LoginRequest>({
     mutationFn: loginUser,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setAccessToken(data.access_token);
+      await queryClient.invalidateQueries({ queryKey: authKeys.me() });
     },
   });
 }
 
 export function useCurrentUser() {
+  const token = getAccessToken();
+
   return useQuery<User, Error>({
     queryKey: authKeys.me(),
-    queryFn: async () => {
-      const token = getAccessToken();
-
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
-      return getCurrentUser(token);
-    },
-    enabled: !!getAccessToken(),
+    queryFn: getCurrentUser,
+    enabled: !!token,
     retry: false,
   });
 }
 
-export function logout() {
-  removeAccessToken();
+export function useLogout() {
+  const queryClient = useQueryClient();
+
+  return () => {
+    removeAccessToken();
+    queryClient.removeQueries({ queryKey: authKeys.me() });
+  };
 }

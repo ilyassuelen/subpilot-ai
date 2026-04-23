@@ -13,6 +13,7 @@ import type {
   TokenResponse,
   User,
 } from "./types";
+import { getAccessToken } from "./auth";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -41,12 +42,17 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const token = getAccessToken();
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers ?? {}),
+  };
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
@@ -79,13 +85,8 @@ export function loginUser(payload: LoginRequest): Promise<TokenResponse> {
   });
 }
 
-export function getCurrentUser(token: string): Promise<User> {
-  return apiFetch<User>("/auth/me", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export function getCurrentUser(): Promise<User> {
+  return apiFetch<User>("/auth/me");
 }
 
 /* =========================
