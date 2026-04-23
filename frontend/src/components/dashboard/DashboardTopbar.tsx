@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useContracts } from "@/hooks/useContracts";
+import { useCurrentUser, logout } from "@/hooks/useAuth";
 import type { Contract } from "@/lib/types";
 import { ContractDetailsModal } from "@/components/contracts/ContractDetailsModal";
 
@@ -35,6 +36,7 @@ export function DashboardTopbar() {
   const searchRef = useRef<HTMLDivElement | null>(null);
 
   const { data: contracts = [] } = useContracts();
+  const { data: currentUser } = useCurrentUser();
 
   const filteredContracts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -110,6 +112,12 @@ export function DashboardTopbar() {
     setSearch("");
     setSearchOpen(false);
     navigate({ to: "/dashboard/reminders" });
+  };
+
+  const handleLogout = () => {
+    setProfileOpen(false);
+    logout();
+    navigate({ to: "/" });
   };
 
   return (
@@ -323,9 +331,11 @@ export function DashboardTopbar() {
             {profileOpen && (
               <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-border/50 bg-card p-3 shadow-card-hover">
                 <div className="mb-3 rounded-xl bg-muted/30 p-3">
-                  <div className="text-sm font-semibold">John Doe</div>
+                  <div className="text-sm font-semibold">
+                    {currentUser?.full_name ?? "User"}
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    john@example.com
+                    {currentUser?.email ?? "No email"}
                   </div>
                 </div>
 
@@ -342,10 +352,7 @@ export function DashboardTopbar() {
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-muted/50"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      console.log("Logout clicked");
-                    }}
+                    onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4 text-primary" />
                     Sign out

@@ -26,12 +26,14 @@ interface LoginModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLoginSuccess?: () => void;
+  onSwitchToRegister?: () => void;
 }
 
 export function LoginModal({
   open,
   onOpenChange,
   onLoginSuccess,
+  onSwitchToRegister,
 }: LoginModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -86,6 +88,11 @@ export function LoginModal({
     onOpenChange(nextOpen);
   };
 
+  const handleSwitchToRegister = () => {
+    handleOpenChange(false);
+    onSwitchToRegister?.();
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="overflow-hidden border-border bg-card p-0 shadow-card-hover sm:max-w-md">
@@ -94,7 +101,7 @@ export function LoginModal({
             <Plane className="h-6 w-6 text-primary-foreground" />
           </div>
 
-          <DialogHeader>
+          <DialogHeader className="items-center text-center">
             <DialogTitle className="font-[var(--font-display)] text-xl font-bold text-primary-foreground">
               Welcome back
             </DialogTitle>
@@ -181,6 +188,17 @@ export function LoginModal({
             )}
             Log In
           </Button>
+
+          <p className="text-center text-xs text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <button
+              type="button"
+              onClick={handleSwitchToRegister}
+              className="cursor-pointer text-primary hover:underline"
+            >
+              Register
+            </button>
+          </p>
         </form>
       </DialogContent>
     </Dialog>

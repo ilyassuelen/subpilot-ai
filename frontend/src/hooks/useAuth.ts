@@ -25,9 +25,9 @@ export function useLogin() {
 
   return useMutation<TokenResponse, Error, LoginRequest>({
     mutationFn: loginUser,
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
       setAccessToken(data.access_token);
-      await queryClient.invalidateQueries({ queryKey: authKeys.me() });
+      queryClient.invalidateQueries({ queryKey: authKeys.me() });
     },
   });
 }
@@ -37,7 +37,7 @@ export function useCurrentUser() {
 
   return useQuery<User, Error>({
     queryKey: authKeys.me(),
-    queryFn: getCurrentUser,
+    queryFn: () => getCurrentUser(),
     enabled: !!token,
     retry: false,
   });
@@ -50,4 +50,8 @@ export function useLogout() {
     removeAccessToken();
     queryClient.removeQueries({ queryKey: authKeys.me() });
   };
+}
+
+export function logout() {
+  removeAccessToken();
 }

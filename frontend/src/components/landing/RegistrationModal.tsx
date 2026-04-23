@@ -42,11 +42,13 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 interface RegistrationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSwitchToLogin?: () => void;
 }
 
 export function RegistrationModal({
   open,
   onOpenChange,
+  onSwitchToLogin,
 }: RegistrationModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -108,6 +110,11 @@ export function RegistrationModal({
     onOpenChange(nextOpen);
   };
 
+  const handleSwitchToLogin = () => {
+    handleOpenChange(false);
+    onSwitchToLogin?.();
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="overflow-hidden border-border bg-card p-0 shadow-card-hover sm:max-w-md">
@@ -116,7 +123,7 @@ export function RegistrationModal({
             <Plane className="h-6 w-6 text-primary-foreground" />
           </div>
 
-          <DialogHeader>
+          <DialogHeader className="items-center text-center">
             <DialogTitle className="font-[var(--font-display)] text-xl font-bold text-primary-foreground">
               Create your SubPilot account
             </DialogTitle>
@@ -257,6 +264,17 @@ export function RegistrationModal({
             )}
             Create Account
           </Button>
+
+          <p className="text-center text-xs text-muted-foreground">
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={handleSwitchToLogin}
+              className="cursor-pointer text-primary hover:underline"
+            >
+              Log in
+            </button>
+          </p>
 
           <p className="text-center text-xs text-muted-foreground">
             By creating an account, you agree to our Terms &amp; Privacy Policy.

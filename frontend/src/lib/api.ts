@@ -44,15 +44,13 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const token = getAccessToken();
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers ?? {}),
-  };
-
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers ?? {}),
+    },
   });
 
   if (!response.ok) {
@@ -86,7 +84,9 @@ export function loginUser(payload: LoginRequest): Promise<TokenResponse> {
 }
 
 export function getCurrentUser(): Promise<User> {
-  return apiFetch<User>("/auth/me");
+  return apiFetch<User>("/auth/me", {
+    method: "GET",
+  });
 }
 
 /* =========================

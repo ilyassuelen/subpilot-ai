@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Plane } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { RegistrationModal } from "./RegistrationModal";
+import { LoginModal } from "./LoginModal";
+import { useCurrentUser, logout } from "@/hooks/useAuth";
 
 const navItems = [
   { label: "Features", href: "#features" },
@@ -16,6 +18,9 @@ const navItems = [
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  const { data: user } = useCurrentUser();
 
   const scrollTo = (id: string) => {
     const el = document.querySelector(id);
@@ -23,74 +28,131 @@ export function Header() {
     setMobileOpen(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    window.location.reload();
+  };
+
+  const openLogin = () => {
+    setRegisterOpen(false);
+    setLoginOpen(true);
+    setMobileOpen(false);
+  };
+
+  const openRegister = () => {
+    setLoginOpen(false);
+    setRegisterOpen(true);
+    setMobileOpen(false);
+  };
+
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center">
-                <img
-                    src="/logo_subpilot.png"
-                    alt="SubPilot Logo"
-                    className="h-20 w-auto object-contain cursor-pointer"
-                />
-            </Link>
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-border/50 glass-card">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center">
+            <img
+              src="/logo_subpilot.png"
+              alt="SubPilot Logo"
+              className="h-20 cursor-pointer"
+            />
+          </Link>
 
-            <nav className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => scrollTo(item.href)}
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-accent cursor-pointer"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
+          <nav className="hidden items-center gap-1 lg:flex">
+            {navItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => scrollTo(item.href)}
+                className="px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-            <div className="hidden lg:flex items-center gap-3">
-              <Link to="/dashboard">
-                <Button variant="ghost" size="sm">Open Dashboard</Button>
-              </Link>
-              <Button variant="hero" size="sm" onClick={() => setRegisterOpen(true)}>
-                Let's Start
-              </Button>
-            </div>
+          <div className="hidden items-center gap-3 lg:flex">
+            {user ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost" size="sm">
+                    Dashboard
+                  </Button>
+                </Link>
 
-            <button
-              className="lg:hidden p-2 rounded-lg hover:bg-accent cursor-pointer"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={openLogin}>
+                  Login
+                </Button>
+
+                <Button variant="hero" size="sm" onClick={openRegister}>
+                  Let&apos;s Start
+                </Button>
+              </>
+            )}
           </div>
+
+          <button
+            className="p-2 lg:hidden"
+            onClick={() => setMobileOpen((prev) => !prev)}
+          >
+            {mobileOpen ? <X /> : <Menu />}
+          </button>
         </div>
 
         {mobileOpen && (
-          <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-lg">
-            <div className="px-4 py-4 space-y-2">
+          <div className="space-y-2 p-4 lg:hidden">
+            <div className="mb-3 space-y-1">
               {navItems.map((item) => (
                 <button
                   key={item.label}
                   onClick={() => scrollTo(item.href)}
-                  className="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg cursor-pointer"
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   {item.label}
                 </button>
               ))}
-              <div className="pt-3 flex flex-col gap-2">
-                <Link to="/dashboard">
-                  <Button variant="outline" className="w-full">Open Dashboard</Button>
-                </Link>
-                <Button variant="hero" className="w-full" onClick={() => { setRegisterOpen(true); setMobileOpen(false); }}>
-                  Let's Start
-                </Button>
-              </div>
             </div>
+
+            {user ? (
+              <>
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                  <Button className="w-full">Dashboard</Button>
+                </Link>
+
+                <Button className="w-full" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button className="w-full" variant="outline" onClick={openLogin}>
+                  Login
+                </Button>
+
+                <Button className="w-full" variant="hero" onClick={openRegister}>
+                  Register
+                </Button>
+              </>
+            )}
           </div>
         )}
       </header>
-      <RegistrationModal open={registerOpen} onOpenChange={setRegisterOpen} />
+
+      <RegistrationModal
+        open={registerOpen}
+        onOpenChange={setRegisterOpen}
+        onSwitchToLogin={openLogin}
+      />
+
+      <LoginModal
+        open={loginOpen}
+        onOpenChange={setLoginOpen}
+        onSwitchToRegister={openRegister}
+      />
     </>
   );
 }
