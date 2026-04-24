@@ -4,14 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.models.contract import Contract
 from app.schemas.contract import ContractCreate, ContractUpdate
-from app.models.action_log import ActionLog
-from app.models.cancellation import CancellationRequest
-from app.models.reminder import Reminder
 
 
-def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
-    """Create and persist a new contract in the database."""
+def create_contract(db: Session, user_id: int, contract_data: ContractCreate) -> Contract:
+    """Create and persist a new contract for a specific user."""
     new_contract = Contract(
+        user_id=user_id,
         title=contract_data.title,
         provider_name=contract_data.provider_name,
         provider_email=contract_data.provider_email,
@@ -35,19 +33,36 @@ def create_contract(db: Session, contract_data: ContractCreate) -> Contract:
     return new_contract
 
 
-def get_all_contracts(db: Session) -> list[Contract]:
-    """Return all contracts stored in the database."""
-    return db.query(Contract).all()
+def get_all_contracts(db: Session, user_id: int) -> list[Contract]:
+    """Return all contracts for a specific user."""
+    return (
+        db.query(Contract)
+        .filter(Contract.user_id == user_id)
+        .order_by(Contract.created_at.desc())
+        .all()
+    )
 
 
-def get_contract_by_id(db: Session, contract_id: int) -> Contract | None:
-    """Return a single contract by its ID or None if it does not exist."""
-    return db.query(Contract).filter(Contract.id == contract_id).first()
+def get_contract_by_id(db: Session, contract_id: int, user_id: int) -> Contract | None:
+    """Return a single contract by its ID for a specific user."""
+    return (
+        db.query(Contract)
+        .filter(
+            Contract.id == contract_id,
+            Contract.user_id == user_id,
+        )
+        .first()
+    )
 
 
-def update_contract(db: Session, contract_id: int, contract_data: ContractUpdate) -> Contract | None:
-    """Update an existing contract and return it, or None if not found."""
-    contract = get_contract_by_id(db, contract_id)
+def update_contract(
+    db: Session,
+    contract_id: int,
+    user_id: int,
+    contract_data: ContractUpdate,
+) -> Contract | None:
+    """Update an existing contract for a specific user."""
+    contract = get_contract_by_id(db, contract_id, user_id)
 
     if not contract:
         return None
@@ -73,40 +88,12 @@ def update_contract(db: Session, contract_id: int, contract_data: ContractUpdate
     return contract
 
 
-def delete_contract(db: Session, contract_id: int) -> bool:
-    """Delete a contract by ID together with related reminders, cancellations, and action logs."""
-    contract = get_contract_by_id(db, contract_id)
+def delete_contract(db: Session, contract_id: int, user_id: int) -> bool:
+    """Delete a contract for a specific user."""
+    contract = get_contract_by_id(db, contract_id, user_id)
 
     if not contract:
         return False
-
-    reminder_ids = [
-        reminder.id
-        for reminder in db.query(Reminder).filter(Reminder.contract_id == contract_id).all()
-    ]
-    cancellation_ids = [
-        cancellation.id
-        for cancellation in db.query(CancellationRequest).filter(
-            CancellationRequest.contract_id == contract_id
-        ).all()
-    ]
-
-    db.query(ActionLog).filter(
-        ActionLog.entity_type == "contract",
-        ActionLog.entity_id == contract_id,
-    ).delete(synchronize_session=False)
-
-    if reminder_ids:
-        db.query(ActionLog).filter(
-            ActionLog.entity_type == "reminder",
-            ActionLog.entity_id.in_(reminder_ids),
-        ).delete(synchronize_session=False)
-
-    if cancellation_ids:
-        db.query(ActionLog).filter(
-            ActionLog.entity_type == "cancellation",
-            ActionLog.entity_id.in_(cancellation_ids),
-        ).delete(synchronize_session=False)
 
     db.delete(contract)
     db.commit()
@@ -132,12 +119,12 @@ def calculate_days_until_deadline(contract: Contract) -> int | None:
     return (cancellation_deadline - date.today()).days
 
 
-def get_expiring_contracts(db: Session, days: int = 30) -> list[Contract]:
-    """Return contracts whose cancellation deadline falls within the next given number of days."""
+def get_expiring_contracts(db: Session, user_id: int, days: int = 30) -> list[Contract]:
+    """Return contracts for a user whose cancellation deadline is within the next given number of days."""
     today = date.today()
     target_date = today + timedelta(days=days)
 
-    contracts = get_all_contracts(db)
+    contracts = get_all_contracts(db, user_id)
     expiring_contracts = []
 
     for contract in contracts:
@@ -158,12 +145,11 @@ def calculate_urgency_status(contract: Contract) -> str:
 
     if days < 0:
         return "overdue"
-    elif days <= 3:
+    if days <= 3:
         return "critical"
-    elif days <= 14:
+    if days <= 14:
         return "warning"
-    else:
-        return "safe"
+    return "safe"
 
 
 def get_normalized_monthly_cost(contract: Contract) -> float:
@@ -179,9 +165,9 @@ def get_normalized_monthly_cost(contract: Contract) -> float:
     return contract.monthly_cost
 
 
-def get_dashboard_stats(db: Session) -> dict:
-    """Calculate dashboard statistics for contracts and monthly costs."""
-    contracts = get_all_contracts(db)
+def get_dashboard_stats(db: Session, user_id: int) -> dict:
+    """Calculate dashboard statistics for a specific user's contracts."""
+    contracts = get_all_contracts(db, user_id)
 
     total_contracts = len(contracts)
     active_contracts = len([contract for contract in contracts if contract.status == "active"])
@@ -203,9 +189,9 @@ def get_dashboard_stats(db: Session) -> dict:
     }
 
 
-def get_contracts_by_urgency(db: Session, urgency_status: str) -> list[Contract]:
-    """Return all contracts matching a specific urgency status."""
-    contracts = get_all_contracts(db)
+def get_contracts_by_urgency(db: Session, user_id: int, urgency_status: str) -> list[Contract]:
+    """Return all contracts for a user matching a specific urgency status."""
+    contracts = get_all_contracts(db, user_id)
 
     return [
         contract
@@ -214,9 +200,9 @@ def get_contracts_by_urgency(db: Session, urgency_status: str) -> list[Contract]
     ]
 
 
-def get_prioritized_contracts(db: Session) -> list[Contract]:
-    """Return contracts sorted by urgency and nearest deadline."""
-    contracts = get_all_contracts(db)
+def get_prioritized_contracts(db: Session, user_id: int) -> list[Contract]:
+    """Return a user's contracts sorted by urgency and nearest deadline."""
+    contracts = get_all_contracts(db, user_id)
 
     priority_order = {
         "overdue": 0,

@@ -12,6 +12,11 @@ class Reminder(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     contract_id: Mapped[int] = mapped_column(
         ForeignKey("contracts.id", ondelete="CASCADE"),
         nullable=False,
@@ -29,4 +34,5 @@ class Reminder(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+    user = relationship("User", back_populates="reminders")
     contract = relationship("Contract", back_populates="reminders")

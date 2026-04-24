@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
+from app.routers.auth import get_current_user
 from app.schemas.dashboard import DashboardStatsResponse
 from app.services.contract_service import get_dashboard_stats
 
@@ -18,6 +19,9 @@ def get_db():
 
 
 @router.get("/stats", response_model=DashboardStatsResponse)
-def get_stats(db: Session = Depends(get_db)):
-    """Return aggregated dashboard statistics for contracts."""
-    return get_dashboard_stats(db)
+def get_stats(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Return aggregated dashboard statistics for the current user."""
+    return get_dashboard_stats(db, current_user.id)

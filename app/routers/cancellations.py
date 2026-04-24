@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
+from app.routers.auth import get_current_user
 from app.schemas.cancellation import CancellationResponse, CancellationGenerateRequest
 from app.schemas.email_preview import EmailPreviewResponse
 from app.services.cancellation_service import (
@@ -30,29 +31,37 @@ def get_db():
 
 @router.post("/contract/{contract_id}/generate", response_model=CancellationResponse)
 def generate_contract_cancellation(
-        contract_id: int,
-        request_data: CancellationGenerateRequest,
-        db: Session = Depends(get_db)
+    contract_id: int,
+    request_data: CancellationGenerateRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     """Generate a cancellation draft for a given contract."""
-    contract = get_contract_by_id(db, contract_id)
+    contract = get_contract_by_id(db, contract_id, current_user.id)
 
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
-    return generate_cancellation_draft(db, contract, request_data)
+    return generate_cancellation_draft(db, current_user.id, contract, request_data)
 
 
 @router.get("/", response_model=list[CancellationResponse])
-def get_cancellations(db: Session = Depends(get_db)):
-    """Return all generated cancellation drafts."""
-    return get_all_cancellation_requests(db)
+def get_cancellations(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Return all generated cancellation drafts for the current user."""
+    return get_all_cancellation_requests(db, current_user.id)
 
 
 @router.get("/{cancellation_id}", response_model=CancellationResponse)
-def get_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
+def get_cancellation(
+    cancellation_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     """Return a single cancellation draft by its ID."""
-    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+    cancellation = get_cancellation_request_by_id(db, cancellation_id, current_user.id)
 
     if not cancellation:
         raise HTTPException(status_code=404, detail="Cancellation request not found")
@@ -61,9 +70,13 @@ def get_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{cancellation_id}/email-preview", response_model=EmailPreviewResponse)
-def get_cancellation_email_preview(cancellation_id: int, db: Session = Depends(get_db)):
+def get_cancellation_email_preview(
+    cancellation_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     """Return a send-ready email preview for a cancellation request."""
-    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+    cancellation = get_cancellation_request_by_id(db, cancellation_id, current_user.id)
 
     if not cancellation:
         raise HTTPException(status_code=404, detail="Cancellation request not found")
@@ -71,7 +84,7 @@ def get_cancellation_email_preview(cancellation_id: int, db: Session = Depends(g
     if cancellation.status != "approved":
         raise HTTPException(
             status_code=400,
-            detail="Cancellation request must be approved before generating email preview"
+            detail="Cancellation request must be approved before generating email preview",
         )
 
     if not cancellation.provider_email:
@@ -81,9 +94,13 @@ def get_cancellation_email_preview(cancellation_id: int, db: Session = Depends(g
 
 
 @router.post("/{cancellation_id}/approve", response_model=CancellationResponse)
-def approve_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
+def approve_cancellation(
+    cancellation_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     """Mark a cancellation draft as approved."""
-    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+    cancellation = get_cancellation_request_by_id(db, cancellation_id, current_user.id)
 
     if not cancellation:
         raise HTTPException(status_code=404, detail="Cancellation request not found")
@@ -94,13 +111,17 @@ def approve_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
             detail=f"Cannot transition cancellation request from '{cancellation.status}' to 'approved'",
         )
 
-    return approve_cancellation_request(db, cancellation_id)
+    return approve_cancellation_request(db, current_user.id, cancellation_id)
 
 
 @router.post("/{cancellation_id}/mark-sent", response_model=CancellationResponse)
-def mark_cancellation_sent(cancellation_id: int, db: Session = Depends(get_db)):
+def mark_cancellation_sent(
+    cancellation_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     """Mark a cancellation request as sent."""
-    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+    cancellation = get_cancellation_request_by_id(db, cancellation_id, current_user.id)
 
     if not cancellation:
         raise HTTPException(status_code=404, detail="Cancellation request not found")
@@ -111,13 +132,17 @@ def mark_cancellation_sent(cancellation_id: int, db: Session = Depends(get_db)):
             detail=f"Cannot transition cancellation request from '{cancellation.status}' to 'sent'",
         )
 
-    return mark_cancellation_request_as_sent(db, cancellation_id)
+    return mark_cancellation_request_as_sent(db, current_user.id, cancellation_id)
 
 
 @router.post("/{cancellation_id}/cancel", response_model=CancellationResponse)
-def cancel_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
+def cancel_cancellation(
+    cancellation_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
     """Mark a cancellation request as cancelled."""
-    cancellation = get_cancellation_request_by_id(db, cancellation_id)
+    cancellation = get_cancellation_request_by_id(db, cancellation_id, current_user.id)
 
     if not cancellation:
         raise HTTPException(status_code=404, detail="Cancellation request not found")
@@ -128,4 +153,4 @@ def cancel_cancellation(cancellation_id: int, db: Session = Depends(get_db)):
             detail=f"Cannot transition cancellation request from '{cancellation.status}' to 'cancelled'",
         )
 
-    return cancel_cancellation_request(db, cancellation_id)
+    return cancel_cancellation_request(db, current_user.id, cancellation_id)

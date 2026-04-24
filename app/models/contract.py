@@ -1,6 +1,6 @@
 from datetime import datetime, date
 
-from sqlalchemy import String, Float, Integer, Date, DateTime, Boolean, Text
+from sqlalchemy import String, Float, Integer, Date, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -11,6 +11,12 @@ class Contract(Base):
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     provider_name: Mapped[str] = mapped_column(String(255), nullable=False)
     provider_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -27,16 +33,10 @@ class Contract(Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    reminders = relationship(
-        "Reminder",
-        back_populates="contract",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
-    )
-
+    user = relationship("User", back_populates="contracts")
+    reminders = relationship("Reminder", back_populates="contract", cascade="all, delete-orphan")
     cancellations = relationship(
         "CancellationRequest",
         back_populates="contract",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
+        cascade="all, delete-orphan"
     )
