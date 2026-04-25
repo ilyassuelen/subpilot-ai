@@ -13,6 +13,8 @@ import type {
   TokenResponse,
   User,
   UserUpdateRequest,
+  NotificationSettings,
+  NotificationSettingsUpdateRequest,
 } from "./types";
 import { getAccessToken } from "./auth";
 
@@ -254,4 +256,21 @@ export function getActionLogsByEntity(
   return apiFetch<ActionLog[]>(
     `/actions/entity/${entityType}/${entityId}`,
   );
+}
+
+/* =========================
+   Notifications
+   ========================= */
+
+export function getNotificationSettings(): Promise<NotificationSettings> {
+  return apiFetch<NotificationSettings>("/settings/notifications/");
+}
+
+export function updateNotificationSettings(
+  payload: NotificationSettingsUpdateRequest,
+): Promise<NotificationSettings> {
+  return apiFetch<NotificationSettings>("/settings/notifications/", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }

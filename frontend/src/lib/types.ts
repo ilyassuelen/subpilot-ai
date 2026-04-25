@@ -152,3 +152,23 @@ export type UserUpdateRequest = {
   email: string;
   address: string;
 };
+
+export type NotificationSettings = {
+  id: number;
+  user_id: number;
+  email_notifications: boolean;
+  push_notifications: boolean;
+  weekly_digest: boolean;
+  telegram_notifications: boolean;
+  telegram_chat_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NotificationSettingsUpdateRequest = {
+  email_notifications: boolean;
+  push_notifications: boolean;
+  weekly_digest: boolean;
+  telegram_notifications: boolean;
+  telegram_chat_id?: string | null;
+};

@@ -22,3 +22,10 @@ class User(Base):
     reminders = relationship("Reminder", back_populates="user", cascade="all, delete-orphan")
     cancellations = relationship("CancellationRequest", back_populates="user", cascade="all, delete-orphan")
     action_logs = relationship("ActionLog", back_populates="user", cascade="all, delete-orphan")
+
+    notification_settings = relationship(
+        "NotificationSettings",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )

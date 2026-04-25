@@ -14,6 +14,10 @@ import {
   X,
 } from "lucide-react";
 
+import {
+  useNotificationSettings,
+  useUpdateNotificationSettings,
+} from "@/hooks/useNotificationSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +30,19 @@ export function SettingsPage() {
   const { data: user, isLoading } = useCurrentUser();
   const updateUserMutation = useUpdateCurrentUser();
 
+  const {
+    data: notificationSettings,
+    isLoading: loadingNotificationSettings,
+  } = useNotificationSettings();
+
+  const updateNotificationSettingsMutation = useUpdateNotificationSettings();
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
+
+  const [telegramChatId, setTelegramChatId] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -42,6 +55,12 @@ export function SettingsPage() {
       setAddress(user.address);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (notificationSettings) {
+      setTelegramChatId(notificationSettings.telegram_chat_id ?? "");
+    }
+  }, [notificationSettings]);
 
   const handleCancelEdit = () => {
     if (!user) return;
@@ -62,11 +81,37 @@ export function SettingsPage() {
     setIsEditingProfile(false);
   };
 
-  if (!mounted) {
-    return <div className="p-6">Loading...</div>;
-  }
+  const updateNotificationField = async (
+    updates: Partial<{
+      email_notifications: boolean;
+      push_notifications: boolean;
+      weekly_digest: boolean;
+      telegram_notifications: boolean;
+      telegram_chat_id: string | null;
+    }>,
+  ) => {
+    if (!notificationSettings) return;
 
-  if (isLoading) {
+    await updateNotificationSettingsMutation.mutateAsync({
+      email_notifications:
+        updates.email_notifications ??
+        notificationSettings.email_notifications,
+      push_notifications:
+        updates.push_notifications ??
+        notificationSettings.push_notifications,
+      weekly_digest:
+        updates.weekly_digest ?? notificationSettings.weekly_digest,
+      telegram_notifications:
+        updates.telegram_notifications ??
+        notificationSettings.telegram_notifications,
+      telegram_chat_id:
+        updates.telegram_chat_id !== undefined
+          ? updates.telegram_chat_id
+          : notificationSettings.telegram_chat_id,
+    });
+  };
+
+  if (!mounted || isLoading) {
     return <div className="p-6">Loading...</div>;
   }
 
@@ -192,38 +237,109 @@ export function SettingsPage() {
           </h2>
         </div>
 
-        <div className="space-y-4">
-          {[
-            [
-              "Email notifications",
-              "Receive renewal and deadline reminders via email.",
-              true,
-            ],
-            [
-              "Push notifications",
-              "Browser push notifications for urgent deadlines.",
-              false,
-            ],
-            [
-              "Weekly digest",
-              "Get a weekly summary of your subscription status.",
-              true,
-            ],
-          ].map(([title, description, defaultChecked]) => (
-            <div
-              key={title as string}
-              className="flex items-center justify-between"
-            >
+        {loadingNotificationSettings || !notificationSettings ? (
+          <p className="text-sm text-muted-foreground">
+            Loading notification preferences...
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="text-sm font-medium">{title as string}</div>
+                <div className="text-sm font-medium">In-app notifications</div>
                 <div className="text-xs text-muted-foreground">
-                  {description as string}
+                  Show deadline reminders and updates inside the app.
                 </div>
               </div>
-              <Switch defaultChecked={defaultChecked as boolean} />
+              <Switch
+                checked={notificationSettings.push_notifications}
+                disabled={updateNotificationSettingsMutation.isPending}
+                onCheckedChange={(checked) =>
+                  updateNotificationField({ push_notifications: checked })
+                }
+              />
             </div>
-          ))}
-        </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium">Email notifications</div>
+                <div className="text-xs text-muted-foreground">
+                  Receive renewal and deadline reminders via email.
+                </div>
+              </div>
+              <Switch
+                checked={notificationSettings.email_notifications}
+                disabled={updateNotificationSettingsMutation.isPending}
+                onCheckedChange={(checked) =>
+                  updateNotificationField({ email_notifications: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium">Telegram notifications</div>
+                <div className="text-xs text-muted-foreground">
+                  Receive important reminders through Telegram.
+                </div>
+              </div>
+              <Switch
+                checked={notificationSettings.telegram_notifications}
+                disabled={updateNotificationSettingsMutation.isPending}
+                onCheckedChange={(checked) =>
+                  updateNotificationField({ telegram_notifications: checked })
+                }
+              />
+            </div>
+
+            {notificationSettings.telegram_notifications && (
+              <div className="space-y-2 rounded-xl border border-border/50 bg-muted/30 p-3">
+                <Label className="text-xs">Telegram Chat ID</Label>
+                <Input
+                  className="h-9 rounded-xl"
+                  placeholder="e.g. 123456789"
+                  value={telegramChatId}
+                  onChange={(e) => setTelegramChatId(e.target.value)}
+                  onBlur={() =>
+                    updateNotificationField({
+                      telegram_chat_id: telegramChatId.trim() || null,
+                    })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  You can add your Telegram Chat ID after connecting the bot.
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium">Weekly digest</div>
+                <div className="text-xs text-muted-foreground">
+                  Get a weekly summary of your subscription status.
+                </div>
+              </div>
+              <Switch
+                checked={notificationSettings.weekly_digest}
+                disabled={updateNotificationSettingsMutation.isPending}
+                onCheckedChange={(checked) =>
+                  updateNotificationField({ weekly_digest: checked })
+                }
+              />
+            </div>
+
+            {updateNotificationSettingsMutation.error && (
+              <div className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+                {updateNotificationSettingsMutation.error.message}
+              </div>
+            )}
+
+            {updateNotificationSettingsMutation.isSuccess && (
+              <div className="rounded-xl bg-success/10 p-3 text-sm text-success">
+                Notification preferences updated.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-card">
