@@ -9,6 +9,9 @@ from app.services.notifications.email_service import (
     EmailConfigurationError,
     send_test_email,
 )
+from app.services.notifications.notification_dispatcher import (
+    process_due_reminders_for_user,
+)
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
@@ -23,6 +26,27 @@ class TestEmailResponse(BaseModel):
     """Schema returned after sending a test email notification."""
 
     message: str
+
+
+class ReminderNotificationResult(BaseModel):
+    """Schema for a single processed reminder notification result."""
+
+    reminder_id: int
+    status: str
+    channels: list[str]
+    message: str
+
+
+class ProcessDueRemindersResponse(BaseModel):
+    """Schema returned after processing due reminder notifications."""
+
+    due_count: int
+    processed_count: int
+    email_sent_count: int
+    in_app_count: int
+    skipped_count: int
+    failed_count: int
+    results: list[ReminderNotificationResult]
 
 
 def get_db():
@@ -63,3 +87,28 @@ def send_test_email_notification(
     return TestEmailResponse(
         message=f"Test email sent to {target_email}.",
     )
+
+
+@router.post(
+    "/process-due-reminders",
+    response_model=ProcessDueRemindersResponse,
+)
+def process_due_reminder_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Process due pending reminders for the current user and send enabled notifications."""
+    try:
+        return process_due_reminders_for_user(db, current_user)
+
+    except EmailConfigurationError as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exception),
+        ) from exception
+
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process due reminders: {exception}",
+        ) from exception
