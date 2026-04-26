@@ -5,12 +5,13 @@ from app.core.database import Base, engine
 from app.models.action_log import ActionLog
 from app.models.cancellation import CancellationRequest
 from app.models.contract import Contract
+from app.models.notification_settings import NotificationSettings
 from app.models.reminder import Reminder
 from app.models.user import User
-from app.models.notification_settings import NotificationSettings
-from app.routers import contracts, dashboard, reminders, cancellations, actions
-from app.routers.auth import router as auth_router
+from app.routers import actions, cancellations, contracts, dashboard, reminders
 from app.routers import notification_settings
+from app.routers import notifications
+from app.routers.auth import router as auth_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -38,6 +39,7 @@ app.include_router(reminders.router)
 app.include_router(cancellations.router)
 app.include_router(actions.router)
 app.include_router(notification_settings.router)
+app.include_router(notifications.router)
 
 @app.get("/")
 def root():
