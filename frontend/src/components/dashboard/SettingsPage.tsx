@@ -245,22 +245,6 @@ export function SettingsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="text-sm font-medium">In-app notifications</div>
-                <div className="text-xs text-muted-foreground">
-                  Show deadline reminders and updates inside the app.
-                </div>
-              </div>
-              <Switch
-                checked={notificationSettings.push_notifications}
-                disabled={updateNotificationSettingsMutation.isPending}
-                onCheckedChange={(checked) =>
-                  updateNotificationField({ push_notifications: checked })
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-              <div>
                 <div className="text-sm font-medium">Email notifications</div>
                 <div className="text-xs text-muted-foreground">
                   Receive renewal and deadline reminders via email.
