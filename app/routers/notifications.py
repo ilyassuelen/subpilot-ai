@@ -12,6 +12,11 @@ from app.services.notifications.email_service import (
 from app.services.notifications.notification_dispatcher import (
     process_due_reminders_for_user,
 )
+from app.services.notifications.telegram_service import (
+    TelegramConfigurationError,
+    TelegramDeliveryError,
+    send_test_telegram_message,
+)
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
@@ -24,6 +29,18 @@ class TestEmailRequest(BaseModel):
 
 class TestEmailResponse(BaseModel):
     """Schema returned after sending a test email notification."""
+
+    message: str
+
+
+class TestTelegramRequest(BaseModel):
+    """Schema for sending a test Telegram notification."""
+
+    chat_id: str
+
+
+class TestTelegramResponse(BaseModel):
+    """Schema returned after sending a test Telegram notification."""
 
     message: str
 
@@ -43,6 +60,7 @@ class ProcessDueRemindersResponse(BaseModel):
     due_count: int
     processed_count: int
     email_sent_count: int
+    telegram_sent_count: int
     in_app_count: int
     skipped_count: int
     failed_count: int
@@ -89,6 +107,42 @@ def send_test_email_notification(
     )
 
 
+@router.post("/test-telegram", response_model=TestTelegramResponse)
+def send_test_telegram_notification(
+    data: TestTelegramRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Send a test Telegram notification to the provided Telegram chat ID."""
+    _ = db
+    _ = current_user
+
+    try:
+        send_test_telegram_message(data.chat_id)
+
+    except TelegramConfigurationError as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exception),
+        ) from exception
+
+    except TelegramDeliveryError as exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exception),
+        ) from exception
+
+    except Exception as exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to send test Telegram message: {exception}",
+        ) from exception
+
+    return TestTelegramResponse(
+        message=f"Test Telegram message sent to chat ID {data.chat_id}.",
+    )
+
+
 @router.post(
     "/process-due-reminders",
     response_model=ProcessDueRemindersResponse,
@@ -104,6 +158,18 @@ def process_due_reminder_notifications(
     except EmailConfigurationError as exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exception),
+        ) from exception
+
+    except TelegramConfigurationError as exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exception),
+        ) from exception
+
+    except TelegramDeliveryError as exception:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exception),
         ) from exception
 

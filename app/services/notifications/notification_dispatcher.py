@@ -7,6 +7,7 @@ from app.models.user import User
 from app.services.action_log_service import create_action_log
 from app.services.notification_settings_service import get_or_create_notification_settings
 from app.services.notifications.email_service import send_email
+from app.services.notifications.telegram_service import send_telegram_message
 
 
 def format_reminder_type(reminder_type: str) -> str:
@@ -23,7 +24,6 @@ def format_reminder_type(reminder_type: str) -> str:
 def build_reminder_email_subject(reminder: Reminder) -> str:
     """Build the email subject for a reminder notification."""
     contract_title = reminder.contract.title if reminder.contract else "your contract"
-
     readable_type = format_reminder_type(reminder.reminder_type)
 
     return f"{readable_type}: {contract_title}"
@@ -34,9 +34,7 @@ def build_reminder_email_body(reminder: Reminder, user: User) -> str:
     contract = reminder.contract
     contract_title = contract.title if contract else "your contract"
     provider_name = contract.provider_name if contract else "the provider"
-
     scheduled_for = reminder.scheduled_for.strftime("%d.%m.%Y %H:%M")
-
     readable_type = format_reminder_type(reminder.reminder_type)
 
     return (
@@ -50,6 +48,25 @@ def build_reminder_email_body(reminder: Reminder, user: User) -> str:
         f"👉 Open SubPilot to review your contract or take action.\n\n"
         f"Best regards,\n"
         f"SubPilot AI"
+    )
+
+
+def build_reminder_telegram_message(reminder: Reminder, user: User) -> str:
+    """Build a user-friendly Telegram message for a reminder notification."""
+    contract = reminder.contract
+    contract_title = contract.title if contract else "your contract"
+    provider_name = contract.provider_name if contract else "the provider"
+    scheduled_for = reminder.scheduled_for.strftime("%d.%m.%Y %H:%M")
+    readable_type = format_reminder_type(reminder.reminder_type)
+
+    return (
+        f"🔔 <b>{readable_type}</b>\n\n"
+        f"Hi {user.full_name},\n\n"
+        f"<b>Contract:</b> {contract_title}\n"
+        f"<b>Provider:</b> {provider_name}\n"
+        f"<b>Scheduled for:</b> {scheduled_for}\n\n"
+        f"{reminder.message}\n\n"
+        f"Open SubPilot to review your contract or take action."
     )
 
 
@@ -82,6 +99,7 @@ def process_due_reminders_for_user(
 
     processed_count = 0
     email_sent_count = 0
+    telegram_sent_count = 0
     in_app_count = 0
     skipped_count = 0
     failed_count = 0
@@ -106,9 +124,16 @@ def process_due_reminders_for_user(
                 delivered_channels.append("email")
                 email_sent_count += 1
 
-            if settings.telegram_notifications:
-                # Telegram delivery will be added in the next step.
-                delivered_channels.append("telegram_pending")
+            if settings.telegram_notifications and settings.telegram_chat_id:
+                send_telegram_message(
+                    chat_id=settings.telegram_chat_id,
+                    text=build_reminder_telegram_message(reminder, user),
+                )
+                delivered_channels.append("telegram")
+                telegram_sent_count += 1
+
+            if settings.telegram_notifications and not settings.telegram_chat_id:
+                delivered_channels.append("telegram_missing_chat_id")
 
             if not delivered_channels:
                 skipped_count += 1
@@ -179,6 +204,7 @@ def process_due_reminders_for_user(
         "due_count": len(reminders),
         "processed_count": processed_count,
         "email_sent_count": email_sent_count,
+        "telegram_sent_count": telegram_sent_count,
         "in_app_count": in_app_count,
         "skipped_count": skipped_count,
         "failed_count": failed_count,
