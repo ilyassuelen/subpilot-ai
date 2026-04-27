@@ -6,3 +6,4 @@ openai
 email-validator
 werkzeug
 PyJWT
+apscheduler

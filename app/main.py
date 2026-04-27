@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,10 +14,23 @@ from app.routers import actions, cancellations, contracts, dashboard, reminders
 from app.routers import notification_settings
 from app.routers import notifications
 from app.routers.auth import router as auth_router
+from app.services.notifications.reminder_agent_scheduler import (
+    start_reminder_agent_scheduler,
+    stop_reminder_agent_scheduler,
+)
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="SubPilot AI")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start and stop background services with the FastAPI application."""
+    start_reminder_agent_scheduler()
+    yield
+    stop_reminder_agent_scheduler()
+
+
+app = FastAPI(title="SubPilot AI", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,6 +55,7 @@ app.include_router(cancellations.router)
 app.include_router(actions.router)
 app.include_router(notification_settings.router)
 app.include_router(notifications.router)
+
 
 @app.get("/")
 def root():

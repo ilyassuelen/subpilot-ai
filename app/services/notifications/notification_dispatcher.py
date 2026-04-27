@@ -210,3 +210,47 @@ def process_due_reminders_for_user(
         "failed_count": failed_count,
         "results": results,
     }
+
+
+def process_due_reminders_for_all_users(db: Session) -> dict:
+    """Process due reminders for all users and deliver notifications based on their preferences."""
+    users = db.query(User).all()
+    total_due_count = 0
+    total_processed_count = 0
+    total_email_sent_count = 0
+    total_telegram_sent_count = 0
+    total_in_app_count = 0
+    total_skipped_count = 0
+    total_failed_count = 0
+    user_results: list[dict] = []
+
+    for user in users:
+        result = process_due_reminders_for_user(db, user)
+
+        total_due_count += result["due_count"]
+        total_processed_count += result["processed_count"]
+        total_email_sent_count += result["email_sent_count"]
+        total_telegram_sent_count += result["telegram_sent_count"]
+        total_in_app_count += result["in_app_count"]
+        total_skipped_count += result["skipped_count"]
+        total_failed_count += result["failed_count"]
+
+        user_results.append(
+            {
+                "user_id": user.id,
+                "email": user.email,
+                "result": result,
+            }
+        )
+
+    return {
+        "user_count": len(users),
+        "due_count": total_due_count,
+        "processed_count": total_processed_count,
+        "email_sent_count": total_email_sent_count,
+        "telegram_sent_count": total_telegram_sent_count,
+        "in_app_count": total_in_app_count,
+        "skipped_count": total_skipped_count,
+        "failed_count": total_failed_count,
+        "users": user_results,
+    }
