@@ -15,9 +15,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useContracts } from "@/hooks/useContracts";
+import { useReminders } from "@/hooks/useReminders";
 import { useCurrentUser, logout } from "@/hooks/useAuth";
-import type { Contract } from "@/lib/types";
+import type { Contract, Reminder } from "@/lib/types";
 import { ContractDetailsModal } from "@/components/contracts/ContractDetailsModal";
+
+function formatNotificationTime(date: string) {
+  const reminderDate = new Date(date);
+  const now = new Date();
+
+  const diffMs = now.getTime() - reminderDate.getTime();
+  const diffMinutes = Math.floor(diffMs / 1000 / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+
+  return `${diffDays} days ago`;
+}
+
+function formatReminderTitle(reminder: Reminder, contract?: Contract) {
+  const contractTitle = contract?.title ?? `Contract #${reminder.contract_id}`;
+
+  if (reminder.status === "sent") {
+    return `Reminder sent: ${contractTitle}`;
+  }
+
+  if (reminder.status === "missed") {
+    return `Reminder missed: ${contractTitle}`;
+  }
+
+  if (reminder.status === "pending") {
+    return `Reminder due: ${contractTitle}`;
+  }
+
+  return `Reminder: ${contractTitle}`;
+}
 
 export function DashboardTopbar() {
   const navigate = useNavigate();
@@ -36,7 +72,45 @@ export function DashboardTopbar() {
   const searchRef = useRef<HTMLDivElement | null>(null);
 
   const { data: contracts = [] } = useContracts();
+  const { data: reminders = [] } = useReminders();
   const { data: currentUser } = useCurrentUser();
+
+  const contractMap = useMemo(() => {
+    return new Map<number, Contract>(
+      contracts.map((contract) => [contract.id, contract]),
+    );
+  }, [contracts]);
+
+  const notifications = useMemo(() => {
+    return reminders
+      .filter((reminder) =>
+        ["pending", "sent", "missed"].includes(reminder.status),
+      )
+      .sort((a, b) => {
+        const aDate = new Date(a.sent_at ?? a.scheduled_for).getTime();
+        const bDate = new Date(b.sent_at ?? b.scheduled_for).getTime();
+
+        return bDate - aDate;
+      })
+      .slice(0, 5)
+      .map((reminder) => {
+        const contract = contractMap.get(reminder.contract_id);
+        const notificationDate = reminder.sent_at ?? reminder.scheduled_for;
+
+        return {
+          id: reminder.id,
+          title: formatReminderTitle(reminder, contract),
+          text: reminder.message,
+          time: formatNotificationTime(notificationDate),
+          status: reminder.status,
+        };
+      });
+  }, [reminders, contractMap]);
+
+  const activeNotificationCount = notifications.filter(
+    (notification) =>
+      notification.status === "pending" || notification.status === "missed",
+  ).length;
 
   const filteredContracts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -193,7 +267,10 @@ export function DashboardTopbar() {
               }}
             >
               <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral" />
+
+              {activeNotificationCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral" />
+              )}
             </Button>
 
             {notificationsOpen && (
@@ -202,43 +279,34 @@ export function DashboardTopbar() {
                   <h3 className="font-[var(--font-display)] text-sm font-semibold">
                     Notifications
                   </h3>
+
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                    3 new
+                    {activeNotificationCount} active
                   </span>
                 </div>
 
-                <div className="space-y-3">
-                  {[
-                    {
-                      title: "Netflix deadline coming up",
-                      text: "Your cancellation deadline is approaching soon.",
-                      time: "Today",
-                    },
-                    {
-                      title: "Reminder missed",
-                      text: "A pending reminder needs your attention.",
-                      time: "Yesterday",
-                    },
-                    {
-                      title: "Draft ready to review",
-                      text: "A cancellation draft is waiting for approval.",
-                      time: "2 days ago",
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.title}
-                      className="rounded-xl border border-border/50 bg-muted/30 p-3"
-                    >
-                      <div className="text-sm font-medium">{item.title}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {item.text}
+                {notifications.length === 0 ? (
+                  <div className="rounded-xl border border-border/50 bg-muted/30 p-3 text-sm text-muted-foreground">
+                    No notifications yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {notifications.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-border/50 bg-muted/30 p-3"
+                      >
+                        <div className="text-sm font-medium">{item.title}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {item.text}
+                        </div>
+                        <div className="mt-2 text-[10px] text-muted-foreground">
+                          {item.time}
+                        </div>
                       </div>
-                      <div className="mt-2 text-[10px] text-muted-foreground">
-                        {item.time}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-4">
                   <Link
