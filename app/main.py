@@ -10,9 +10,16 @@ from app.models.contract import Contract
 from app.models.notification_settings import NotificationSettings
 from app.models.reminder import Reminder
 from app.models.user import User
-from app.routers import actions, cancellations, contracts, dashboard, reminders
-from app.routers import notification_settings
-from app.routers import notifications
+from app.routers import (
+    actions,
+    cancellations,
+    contracts,
+    dashboard,
+    reminders,
+    notification_settings,
+    notifications,
+    savings_insights,
+)
 from app.routers.auth import router as auth_router
 from app.services.notifications.reminder_agent_scheduler import (
     start_reminder_agent_scheduler,
@@ -55,6 +62,7 @@ app.include_router(cancellations.router)
 app.include_router(actions.router)
 app.include_router(notification_settings.router)
 app.include_router(notifications.router)
+app.include_router(savings_insights.router)
 
 
 @app.get("/")
