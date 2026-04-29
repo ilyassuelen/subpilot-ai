@@ -8,6 +8,9 @@ import {
   BrainCircuit,
   Bell,
   BarChart3,
+  Sparkles,
+  ArrowRight,
+  PiggyBank,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -16,7 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useContracts } from "@/hooks/useContracts";
 import { useReminders } from "@/hooks/useReminders";
 import { useActions } from "@/hooks/useActions";
-import type { ActionLog } from "@/lib/types";
+import { useSavingsInsights } from "@/hooks/useSavingsInsights";
+import type { ActionLog, SavingsInsight } from "@/lib/types";
 import {
   buildRecurringTrend,
   getNormalizedMonthlyCost,
@@ -37,6 +41,16 @@ function formatCurrency(
     style: "currency",
     currency,
   }).format(amount);
+}
+
+function getInsightPriorityClasses(priority: string) {
+  if (priority === "high") return "bg-destructive/10 text-destructive";
+  if (priority === "medium") return "bg-warning/10 text-warning";
+  return "bg-primary/10 text-primary";
+}
+
+function getTopSavingsInsight(insights: SavingsInsight[]) {
+  return insights[0] ?? null;
 }
 
 function formatDate(date: string | null) {
@@ -112,7 +126,20 @@ export function DashboardOverview() {
     isLoading: loadingActions,
   } = useActions();
 
-  const isLoading = loadingContracts || loadingReminders || loadingActions;
+  const {
+    data: savingsInsights,
+    isLoading: loadingSavingsInsights,
+  } = useSavingsInsights();
+
+  const isLoading =
+    loadingContracts ||
+    loadingReminders ||
+    loadingActions ||
+    loadingSavingsInsights;
+
+  const topSavingsInsight = useMemo(() => {
+    return getTopSavingsInsight(savingsInsights?.insights ?? []);
+  }, [savingsInsights]);
 
   const activeContracts = useMemo(
     () => contracts.filter((contract) => contract.status === "active"),
@@ -177,6 +204,7 @@ export function DashboardOverview() {
         const dateB = new Date(
           b.cancellation_deadline ?? b.end_date ?? "9999-12-31",
         ).getTime();
+
         return dateA - dateB;
       })
       .slice(0, 5)
@@ -200,6 +228,7 @@ export function DashboardOverview() {
     );
 
     const grouped: Record<string, number> = {};
+
     activeContracts.forEach((contract) => {
       const value = getNormalizedMonthlyCost(contract);
       grouped[contract.category] = (grouped[contract.category] || 0) + value;
@@ -247,11 +276,11 @@ export function DashboardOverview() {
   }, [activeContracts]);
 
   const trendMin = useMemo(() => {
-      return Math.min(...trend.points.map((point) => point.amount));
+    return Math.min(...trend.points.map((point) => point.amount));
   }, [trend]);
 
   const trendRange = useMemo(() => {
-      return Math.max(trend.maxAmount - trendMin, 1);
+    return Math.max(trend.maxAmount - trendMin, 1);
   }, [trend, trendMin]);
 
   return (
@@ -315,6 +344,83 @@ export function DashboardOverview() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-2xl border border-primary/20 bg-gradient-card-blue p-6 shadow-card">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Smart Savings Agent
+            </div>
+
+            <h2 className="font-[var(--font-display)] text-xl font-bold">
+              AI-powered savings recommendations
+            </h2>
+
+            {isLoading ? (
+              <Skeleton className="mt-3 h-5 w-96" />
+            ) : (
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                SubPilot found{" "}
+                <span className="font-semibold text-foreground">
+                  {savingsInsights?.insight_count ?? 0}
+                </span>{" "}
+                recommendation(s) with an estimated monthly saving of{" "}
+                <span className="font-semibold text-primary">
+                  {formatCurrency(
+                    savingsInsights?.estimated_monthly_saving ?? 0,
+                  )}
+                </span>
+                .
+              </p>
+            )}
+
+            {!isLoading && topSavingsInsight && (
+              <div className="mt-4 rounded-xl border border-border/50 bg-card/70 p-4">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getInsightPriorityClasses(
+                      topSavingsInsight.priority,
+                    )}`}
+                  >
+                    {topSavingsInsight.priority}
+                  </span>
+
+                  <span className="text-sm font-semibold">
+                    {topSavingsInsight.title}
+                  </span>
+                </div>
+
+                <p className="line-clamp-2 text-sm text-muted-foreground">
+                  {topSavingsInsight.message}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-col gap-3 rounded-2xl bg-card/80 p-4 shadow-soft">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <PiggyBank className="h-4 w-4 text-primary" />
+              Potential saving
+            </div>
+
+            {isLoading ? (
+              <Skeleton className="h-8 w-28" />
+            ) : (
+              <div className="font-[var(--font-display)] text-2xl font-bold text-primary">
+                {formatCurrency(savingsInsights?.estimated_monthly_saving ?? 0)}
+              </div>
+            )}
+
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/dashboard/savings">
+                View recommendations
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

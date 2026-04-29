@@ -172,3 +172,24 @@ export type NotificationSettingsUpdateRequest = {
   telegram_notifications: boolean;
   telegram_chat_id?: string | null;
 };
+
+/* =========================
+   Smart Savings Insights
+   ========================= */
+
+export type SavingsInsight = {
+  type: string;
+  priority: "high" | "medium" | "low" | string;
+  title: string;
+  message: string;
+  estimated_monthly_saving: number;
+  contract_id: number | null;
+  action: string;
+};
+
+export type SavingsInsightsSummary = {
+  total_monthly_cost: number;
+  estimated_monthly_saving: number;
+  insight_count: number;
+  insights: SavingsInsight[];
+};

@@ -13,6 +13,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardSavingsRouteImport } from './routes/dashboard.savings'
 import { Route as DashboardRemindersRouteImport } from './routes/dashboard.reminders'
 import { Route as DashboardContractsRouteImport } from './routes/dashboard.contracts'
 import { Route as DashboardCancellationsRouteImport } from './routes/dashboard.cancellations'
@@ -37,6 +38,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSavingsRoute = DashboardSavingsRouteImport.update({
+  id: '/savings',
+  path: '/savings',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardRemindersRoute = DashboardRemindersRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/cancellations': typeof DashboardCancellationsRoute
   '/dashboard/contracts': typeof DashboardContractsRoute
   '/dashboard/reminders': typeof DashboardRemindersRoute
+  '/dashboard/savings': typeof DashboardSavingsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/dashboard/cancellations': typeof DashboardCancellationsRoute
   '/dashboard/contracts': typeof DashboardContractsRoute
   '/dashboard/reminders': typeof DashboardRemindersRoute
+  '/dashboard/savings': typeof DashboardSavingsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/dashboard/cancellations': typeof DashboardCancellationsRoute
   '/dashboard/contracts': typeof DashboardContractsRoute
   '/dashboard/reminders': typeof DashboardRemindersRoute
+  '/dashboard/savings': typeof DashboardSavingsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/dashboard/cancellations'
     | '/dashboard/contracts'
     | '/dashboard/reminders'
+    | '/dashboard/savings'
     | '/dashboard/settings'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard/cancellations'
     | '/dashboard/contracts'
     | '/dashboard/reminders'
+    | '/dashboard/savings'
     | '/dashboard/settings'
     | '/dashboard'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/dashboard/cancellations'
     | '/dashboard/contracts'
     | '/dashboard/reminders'
+    | '/dashboard/savings'
     | '/dashboard/settings'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
@@ -166,6 +178,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/dashboard/settings'
       preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/savings': {
+      id: '/dashboard/savings'
+      path: '/savings'
+      fullPath: '/dashboard/savings'
+      preLoaderRoute: typeof DashboardSavingsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/reminders': {
@@ -212,6 +231,7 @@ interface DashboardRouteChildren {
   DashboardCancellationsRoute: typeof DashboardCancellationsRoute
   DashboardContractsRoute: typeof DashboardContractsRoute
   DashboardRemindersRoute: typeof DashboardRemindersRoute
+  DashboardSavingsRoute: typeof DashboardSavingsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
@@ -222,6 +242,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCancellationsRoute: DashboardCancellationsRoute,
   DashboardContractsRoute: DashboardContractsRoute,
   DashboardRemindersRoute: DashboardRemindersRoute,
+  DashboardSavingsRoute: DashboardSavingsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }

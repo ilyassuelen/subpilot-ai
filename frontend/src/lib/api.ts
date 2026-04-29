@@ -15,6 +15,7 @@ import type {
   UserUpdateRequest,
   NotificationSettings,
   NotificationSettingsUpdateRequest,
+  SavingsInsightsSummary,
 } from "./types";
 import { getAccessToken } from "./auth";
 
@@ -273,4 +274,12 @@ export function updateNotificationSettings(
     method: "PUT",
     body: JSON.stringify(payload),
   });
+}
+
+/* =========================
+   Smart Savings Insights
+   ========================= */
+
+export function getSavingsInsights(): Promise<SavingsInsightsSummary> {
+  return apiFetch<SavingsInsightsSummary>("/savings-insights/");
 }
