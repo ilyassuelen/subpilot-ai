@@ -20,6 +20,6 @@ def generate_savings_insights_for_user(
     )
 
     service = SavingsService(db)
-    result = service.generate_insights(user_id, contracts)
+    result = service.generate_insights(user_id=user_id, contracts=contracts)
 
     return SavingsInsightsSummaryResponse(**result)
