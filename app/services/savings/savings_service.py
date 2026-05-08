@@ -19,7 +19,7 @@ class SavingsService:
         self.db = db
 
     def build_priority(self, saving: float, monthly_cost: float) -> str:
-        """Build recommendation priority from saving amount and ratio."""
+        """Build recommendation priority from saving amount and saving ratio."""
         if monthly_cost <= 0:
             return "low"
 
@@ -60,7 +60,7 @@ class SavingsService:
         return f"Potential savings for {contract.title}"
 
     def generate_insights(self, user_id: int, contracts: list[Contract]) -> dict:
-        """Generate savings insights for a user's active contracts."""
+        """Generate fresh savings insights for a user's active contracts."""
         _ = user_id
 
         insights = []
@@ -120,6 +120,15 @@ class SavingsService:
                     "estimated_monthly_saving": saving,
                     "contract_id": contract.id,
                     "action": self.build_action(best_option),
+                    "current_monthly_cost": monthly_cost,
+                    "option_provider": best_option.get("provider"),
+                    "option_plan": best_option.get("plan"),
+                    "option_price": best_option.get("price"),
+                    "option_currency": best_option.get("currency", contract.currency),
+                    "source_name": best_option.get("source_name"),
+                    "source_url": best_option.get("source_url"),
+                    "contract_profile": contract_profile,
+                    "offer_data": best_option,
                 }
             )
 

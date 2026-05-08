@@ -4,6 +4,7 @@ import re
 from openai import OpenAI
 
 from app.models.contract import Contract
+from app.services.savings.policy_engine import classify_contract
 
 client = OpenAI()
 
@@ -24,14 +25,22 @@ def extract_json(text: str) -> dict:
 
 
 def understand_contract(contract: Contract, monthly_cost: float) -> dict:
-    """Extract generic comparable contract features."""
-    prompt = f"""
-You are a universal contract understanding agent.
+    """Extract comparable contract features and classify them via policy data."""
+    raw_text = " ".join(
+        [
+            contract.title or "",
+            contract.provider_name or "",
+            contract.category or "",
+            contract.contract_type or "",
+            contract.notes or "",
+        ]
+    )
 
-Analyze this contract and extract the relevant comparable features.
-Do not assume a fixed contract type. This can be any kind of subscription,
-contract, membership, utility tariff, software plan, insurance, service plan,
-or recurring payment.
+    prompt = f"""
+You are SubPilot's strict contract understanding agent.
+
+Analyze this contract and extract only comparable features that are actually
+known from the provided data. Do not invent missing details.
 
 Contract data:
 - Title: {contract.title}
@@ -46,8 +55,9 @@ Return JSON only.
 
 Schema:
 {{
+  "provider": "{contract.provider_name}",
   "category": "short generic category",
-  "comparison_goal": "what an equivalent alternative must preserve",
+  "comparison_goal": "what a comparable option must preserve",
   "features": [
     {{
       "name": "feature name",
@@ -60,11 +70,14 @@ Schema:
 }}
 
 Rules:
-- Extract only features that can matter for comparing alternatives.
-- High importance features must be preserved by alternatives.
-- Use generic feature names.
-- Do not invent details that are not present or reasonably inferable.
-- If a feature is unknown, do not include it.
+- Always include the provider field exactly.
+- Extract only features that matter for comparing alternatives.
+- Do not invent unknown features.
+- High importance features must be preserved by equivalent alternatives.
+- For streaming, provider/catalog is usually not interchangeable.
+- For fixed internet, speed/download/upload/router/contract duration can matter.
+- For mobile contracts, data volume, network, 5G/LTE and contract duration can matter.
+- For energy contracts, postal code, yearly kWh usage, base price and working price matter.
 """
 
     response = client.chat.completions.create(
@@ -77,5 +90,11 @@ Rules:
 
     if not isinstance(data.get("features"), list):
         data["features"] = []
+
+    data["provider"] = contract.provider_name
+    data["raw_text"] = raw_text
+    data["current_monthly_cost"] = round(monthly_cost, 2)
+    data["currency"] = contract.currency
+    data["canonical_category"] = classify_contract(data)
 
     return data

@@ -178,6 +178,7 @@ export type NotificationSettingsUpdateRequest = {
    ========================= */
 
 export type SavingsInsight = {
+  id: number | null;
   type: string;
   priority: "high" | "medium" | "low" | string;
   title: string;
@@ -185,6 +186,18 @@ export type SavingsInsight = {
   estimated_monthly_saving: number;
   contract_id: number | null;
   action: string;
+
+  current_monthly_cost: number | null;
+  option_provider: string | null;
+  option_plan: string | null;
+  option_price: number | null;
+  option_currency: string | null;
+
+  source_name: string | null;
+  source_url: string | null;
+
+  created_at: string | null;
+  refreshed_at: string | null;
 };
 
 export type SavingsInsightsSummary = {

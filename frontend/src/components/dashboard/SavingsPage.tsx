@@ -5,12 +5,16 @@ import {
   Sparkles,
   AlertTriangle,
   TrendingDown,
+  RefreshCw,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSavingsInsights } from "@/hooks/useSavingsInsights";
+import {
+  useRefreshSavingsInsights,
+  useSavingsInsights,
+} from "@/hooks/useSavingsInsights";
 import type { SavingsInsight } from "@/lib/types";
 
 function formatCurrency(
@@ -59,8 +63,10 @@ function getInsightIcon(type: string) {
 
 export function SavingsPage() {
   const { data, isLoading, error } = useSavingsInsights();
+  const refreshSavingsInsights = useRefreshSavingsInsights();
 
   const insights: SavingsInsight[] = data?.insights ?? [];
+  const isRefreshing = refreshSavingsInsights.isPending;
 
   return (
     <div className="space-y-6">
@@ -82,17 +88,37 @@ export function SavingsPage() {
           </p>
         </div>
 
-        <Button variant="hero" size="sm" asChild>
-          <Link to="/dashboard/contracts">
-            Review Contracts
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isLoading || isRefreshing}
+            onClick={() => refreshSavingsInsights.mutate()}
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            {isRefreshing ? "Refreshing..." : "Refresh analysis"}
+          </Button>
+
+          <Button variant="hero" size="sm" asChild>
+            <Link to="/dashboard/contracts">
+              Review Contracts
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {error && (
         <div className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
           Failed to load savings recommendations.
+        </div>
+      )}
+
+      {refreshSavingsInsights.error && (
+        <div className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
+          Failed to refresh savings analysis.
         </div>
       )}
 
@@ -103,7 +129,7 @@ export function SavingsPage() {
             Potential Monthly Saving
           </div>
 
-          {isLoading ? (
+          {isLoading || isRefreshing ? (
             <Skeleton className="h-9 w-28" />
           ) : (
             <div className="font-[var(--font-display)] text-3xl font-bold text-primary">
@@ -121,7 +147,7 @@ export function SavingsPage() {
             Current Monthly Cost
           </div>
 
-          {isLoading ? (
+          {isLoading || isRefreshing ? (
             <Skeleton className="h-9 w-28" />
           ) : (
             <div className="font-[var(--font-display)] text-3xl font-bold">
@@ -139,7 +165,7 @@ export function SavingsPage() {
             Recommendations
           </div>
 
-          {isLoading ? (
+          {isLoading || isRefreshing ? (
             <Skeleton className="h-9 w-20" />
           ) : (
             <div className="font-[var(--font-display)] text-3xl font-bold">
@@ -153,7 +179,7 @@ export function SavingsPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || isRefreshing ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-40 w-full rounded-2xl" />
@@ -176,7 +202,7 @@ export function SavingsPage() {
 
             return (
               <div
-                key={`${insight.contract_id}-${insight.title}`}
+                key={insight.id ?? `${insight.contract_id}-${insight.title}`}
                 className="rounded-2xl border border-border/50 bg-card p-6 shadow-card transition-all hover:shadow-card-hover"
               >
                 <div className="flex items-start justify-between gap-4">

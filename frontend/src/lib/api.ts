@@ -283,3 +283,9 @@ export function updateNotificationSettings(
 export function getSavingsInsights(): Promise<SavingsInsightsSummary> {
   return apiFetch<SavingsInsightsSummary>("/savings-insights/");
 }
+
+export function refreshSavingsInsights(): Promise<SavingsInsightsSummary> {
+  return apiFetch<SavingsInsightsSummary>("/savings-insights/refresh", {
+    method: "POST",
+  });
+}

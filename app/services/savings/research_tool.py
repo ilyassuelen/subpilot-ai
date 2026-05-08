@@ -4,6 +4,7 @@ import re
 from openai import OpenAI
 
 from app.models.contract import Contract
+from app.services.savings.policy_engine import get_research_guidance
 
 client = OpenAI()
 
@@ -29,10 +30,12 @@ def research_alternatives(
     monthly_cost: float,
 ) -> list[dict]:
     """Research comparable alternatives and downgrade options using web search."""
+    policy_guidance = get_research_guidance(contract_profile)
+
     prompt = f"""
 You are SubPilot's strict savings research agent.
 
-Find realistic savings options for this contract.
+Find realistic savings options for this contract in Germany.
 
 Contract:
 - Title: {contract.title}
@@ -43,24 +46,31 @@ Contract:
 Contract profile:
 {json.dumps(contract_profile, ensure_ascii=False)}
 
-Your task:
-Find savings options in Germany. There are two valid recommendation types:
+Data-driven category policy:
+{json.dumps(policy_guidance, ensure_ascii=False)}
+
+Valid recommendation types:
 
 1. equivalent_alternative
-- Another plan/provider that preserves the important value of the current contract.
-- Should match important features as closely as possible.
+- A cheaper plan/provider that preserves the important value of the current contract.
+- Must belong to the same policy category.
+- Must follow the category policy above.
 
 2. downgrade_option
 - A cheaper plan that intentionally reduces some features.
-- This is allowed only if the tradeoff is clear and reasonable.
-- Example: cheaper plan, fewer included features, lower plan tier, fewer users, lower usage limit.
+- Must follow the category policy above.
+- If same_provider_required is true, it must stay with the same provider.
+- The tradeoff must clearly explain what the user gives up.
 
 Strict rules:
-- Do not suggest random substitutes that are not meaningfully related.
 - Do not invent prices.
-- Prefer options from the same provider if the contract appears to be plan-based.
-- Different-provider alternatives are allowed only if they solve the same main user need.
-- Every option must include a monthly price.
+- Do not invent plan names.
+- Do not mix categories.
+- Do not compare fixed internet with mobile contracts.
+- Do not compare streaming providers as equivalent unless the policy allows it.
+- Do not suggest energy offers unless the offer evidence includes consumption/price logic such as kWh, usage, base price or working price.
+- Every option must include a real source_name and source_url.
+- Every option must include category_id from the policy.
 - If you cannot find reliable options, return an empty alternatives list.
 - Return JSON only.
 
@@ -70,6 +80,7 @@ Schema:
     {{
       "provider": "provider name",
       "plan": "plan or tariff name",
+      "category_id": "policy category id",
       "price": 0.0,
       "currency": "EUR",
       "recommendation_type": "equivalent_alternative",
@@ -91,6 +102,7 @@ Schema:
 
 Important:
 - recommendation_type must be either "equivalent_alternative" or "downgrade_option".
+- category_id must match the category policy id.
 - For downgrade_option, tradeoff must clearly explain what the user gives up.
 - For equivalent_alternative, tradeoff can be "No major tradeoff identified".
 """
@@ -119,7 +131,7 @@ Important:
             "equivalent_alternative",
             "downgrade_option",
         }:
-            alternative["recommendation_type"] = "equivalent_alternative"
+            continue
 
         cleaned_alternatives.append(alternative)
 

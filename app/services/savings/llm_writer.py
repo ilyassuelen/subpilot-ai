@@ -1,8 +1,4 @@
-from openai import OpenAI
-
 from app.models.contract import Contract
-
-client = OpenAI()
 
 
 def generate_text(
@@ -12,48 +8,31 @@ def generate_text(
     saving: float,
     current_monthly_cost: float,
 ) -> str:
-    """Generate a user-friendly recommendation without changing validated numbers."""
-    recommendation_type = best_option.get("recommendation_type", "equivalent_alternative")
-    tradeoff = best_option.get("tradeoff") or "No major tradeoff identified"
+    """Generate deterministic recommendation text from validated data only."""
+    _ = contract_profile
 
-    prompt = f"""
-You are SubPilot's Smart Savings Agent.
+    provider = best_option.get("provider") or "the provider"
+    plan = best_option.get("plan") or "the alternative plan"
+    price = float(best_option.get("price") or 0)
+    currency = best_option.get("currency") or contract.currency
+    recommendation_type = best_option.get("recommendation_type")
+    tradeoff = best_option.get("tradeoff") or "Please review the tradeoffs before switching."
+    source_name = best_option.get("source_name") or "the listed source"
 
-Write a concise recommendation for the user.
+    if recommendation_type == "downgrade_option":
+        return (
+            f"You could review the {plan} plan from {provider}, which costs "
+            f"{price:.2f} {currency} per month instead of your current "
+            f"{current_monthly_cost:.2f} {currency}. This could save you "
+            f"{saving:.2f} {currency} per month. This is a downgrade option: "
+            f"{tradeoff} Source: {source_name}. Please verify the current price, "
+            f"availability and conditions before switching."
+        )
 
-Rules:
-- Do not change any numbers.
-- Do not invent additional alternatives.
-- Explain whether this is an equivalent alternative or a downgrade option.
-- If it is a downgrade option, clearly mention the tradeoff.
-- Mention that the user should verify availability before switching.
-- Keep it practical and trustworthy.
-
-Contract:
-- Title: {contract.title}
-- Provider: {contract.provider_name}
-- Current monthly cost: {current_monthly_cost:.2f} {contract.currency}
-
-Contract profile:
-{contract_profile}
-
-Validated savings option:
-- Provider: {best_option.get("provider")}
-- Plan: {best_option.get("plan")}
-- Price: {best_option.get("price")} {best_option.get("currency", contract.currency)}
-- Saving: {saving:.2f} {contract.currency}
-- Recommendation type: {recommendation_type}
-- Tradeoff: {tradeoff}
-- Source: {best_option.get("source_name")}
-- Reason: {best_option.get("reason")}
-
-Return only the recommendation text.
-"""
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        temperature=0.2,
-        messages=[{"role": "user", "content": prompt}],
+    return (
+        f"You could compare your current contract with {plan} from {provider}, "
+        f"which costs {price:.2f} {currency} per month instead of your current "
+        f"{current_monthly_cost:.2f} {currency}. This could save you "
+        f"{saving:.2f} {currency} per month. Source: {source_name}. Please verify "
+        f"the current price, availability, contract duration and conditions before switching."
     )
-
-    return response.choices[0].message.content or ""
