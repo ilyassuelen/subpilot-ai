@@ -2,9 +2,10 @@
   <img src="frontend/public/git_logo.png" alt="SubPilot Logo" width="600"/>
 </p>
 
-**Your AI co-pilot for subscriptions and contracts.**
+**A modern platform for managing subscriptions, renewals and cancellation workflows.**
 
-SubPilot is a full-stack web application that helps users manage recurring contracts, track spending, stay ahead of deadlines, and generate AI-assisted cancellation drafts. All in one place.
+SubPilot is a full-stack web application for managing subscriptions and recurring contracts.
+It helps users track spending, monitor renewal deadlines, organize cancellation workflows, receive reminder notifications via email or Telegram, and generate AI-assisted cancellation drafts.
 
 ---
 
@@ -16,15 +17,21 @@ SubPilot is a full-stack web application that helps users manage recurring contr
 - Stay ahead of renewal dates and cancellation deadlines
 - Visualize spending with analytics and category breakdowns
 
-### 🤖 AI-Powered Workflow
-- Generate professional cancellation drafts with AI
-- Privacy-first design: no sensitive data sent to the AI layer
-- Backend-based composition of final customer-specific letters
+### 🧠 Smart Workflows
+- Generate professional cancellation drafts with AI assistance
+- Structured contract insight system for renewals, deadlines and optimization reviews
+- Privacy-first architecture with backend-controlled sensitive data handling
 
 ### ⚡ Productivity
-- Send-ready email drafts
+- Send-ready cancellation email workflows
 - Activity tracking for all contract changes
 - Structured workflow from tracking → decision → cancellation
+
+### 🔔 Notifications & Reminders
+- Automated renewal and cancellation reminders
+- Email-based contract notifications
+- Telegram reminder integration
+- Deadline-aware contract tracking
 
 ---
 
@@ -40,7 +47,6 @@ SubPilot is designed with a strong focus on data privacy:
 
 ## 🧠 Planned Features
 
-- AI-powered spending insights
 - Inbox-based subscription detection (opt-in)
 - Budget tracking and alerts
 - Multi-language contract workflows
@@ -53,7 +59,7 @@ SubPilot is designed with a strong focus on data privacy:
 - **Python**
 - **FastAPI**
 - **SQLAlchemy**
-- **SQLite** (dev)
+- **SQLite** (development)
 - REST API architecture
 
 ### Frontend
@@ -63,9 +69,21 @@ SubPilot is designed with a strong focus on data privacy:
 - **Framer Motion**
 
 ### AI Integration
-- LLM-based cancellation draft generation
+- AI-assisted cancellation draft generation
 - Structured prompt workflows
-- Privacy-aware system design
+- Privacy-first AI architecture
+- Backend-controlled handling of sensitive customer data
+
+---
+
+## 🏛️ Architecture Highlights
+
+- Modular FastAPI backend architecture
+- SQLAlchemy ORM-based data layer
+- Contract lifecycle tracking and reminder workflows
+- Persistent contract insight system
+- Privacy-first AI integration design
+- Structured notification system with Email & Telegram support
 
 ---
 
@@ -118,37 +136,48 @@ npm run dev
 subpilot-ai/
 │
 ├── app/
-│   ├── core/
-│   ├── models/
-│   ├── routers/
-│   ├── schemas/
-│   ├── services/
-│       ├── ai/
-│   ├── main.py
+│   ├── core/                # Database, configuration and application setup
+│   ├── models/              # SQLAlchemy database models
+│   ├── routers/             # FastAPI API route handlers
+│   ├── schemas/             # Pydantic request/response schemas
+│   ├── services/            # Business logic and workflows
+│   │   ├── ai/              # AI-assisted cancellation workflows
+│   │   ├── notifications/   # Email and Telegram notification services
+│   │   └── savings/         # Contract insights and optimization logic
+│   └── main.py              # FastAPI application entrypoint
 │
 ├── frontend/
 │   ├── public/
-│   ├── src/
-│       ├── components/
-│           ├── contracts/
-│           ├── dashboard/
-│           ├── landing/
-│           ├── reminders/
-│           ├── ui/
+│   └── src/
+│       ├── components/      # Reusable React UI components
+│       │   ├── contracts/
+│       │   ├── dashboard/
+│       │   ├── landing/
+│       │   ├── reminders/
+│       │   └── ui/
 │       ├── hooks/
 │       ├── lib/
-│       ├── routes/
+│       └── routes/
 │
+├── .env                     # Environment configuration
+├── .gitignore
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── subpilot.db              # Local SQLite development database
 ```
 
 ## 🎯 Vision
-SubPilot aims to evolve into a smart contract management assistant that:
-- Reduces unnecessary spending
-- Prevents missed cancellation deadlines
-- Automates repetitive contract workflows
-- Combines analytics with AI-driven decision support
+SubPilot aims to become a modern contract operations platform for consumers.
+
+The goal is to help users:
+
+- stay ahead of renewals and cancellation windows
+- reduce organizational overhead around subscriptions
+- centralize recurring contracts in one place
+- simplify cancellation workflows
+- make better contract decisions through structured insights
+
+SubPilot combines automation, analytics and AI-assisted workflows with a strong privacy-first architecture.
 
 ## 👨‍💻 Author
 Ilyas Sülen
