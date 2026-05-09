@@ -5,17 +5,17 @@ from app.core.database import SessionLocal
 from app.routers.auth import get_current_user
 from app.schemas.contract import ContractCreate, ContractResponse, ContractUpdate
 from app.services.contract_service import (
-    create_contract,
-    get_all_contracts,
-    get_contract_by_id,
-    update_contract,
-    delete_contract,
     calculate_cancellation_deadline,
     calculate_days_until_deadline,
-    get_expiring_contracts,
     calculate_urgency_status,
+    create_contract,
+    delete_contract,
+    get_all_contracts,
+    get_contract_by_id,
     get_contracts_by_urgency,
+    get_expiring_contracts,
     get_prioritized_contracts,
+    update_contract,
 )
 
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
@@ -37,6 +37,7 @@ def build_contract_response(contract):
         "title": contract.title,
         "provider_name": contract.provider_name,
         "provider_email": contract.provider_email,
+        "plan_name": contract.plan_name,
         "category": contract.category,
         "contract_type": contract.contract_type,
         "monthly_cost": contract.monthly_cost,
@@ -51,6 +52,7 @@ def build_contract_response(contract):
         "urgency_status": calculate_urgency_status(contract),
         "status": contract.status,
         "notes": contract.notes,
+        "comparison_attributes": contract.comparison_attributes or [],
         "created_at": contract.created_at,
     }
 

@@ -11,7 +11,7 @@ const navItems = [
   { icon: Bell, label: "Reminders", to: "/dashboard/reminders" as const },
   { icon: XCircle, label: "Cancellations", to: "/dashboard/cancellations" as const },
   { icon: BarChart3, label: "Analytics", to: "/dashboard/analytics" as const },
-  { icon: PiggyBank, label: "AI Savings", to: "/dashboard/savings" as const },
+  { icon: PiggyBank, label: "Insights", to: "/dashboard/savings" as const },
   { icon: Activity, label: "Activity", to: "/dashboard/activity" as const },
   { icon: Settings, label: "Settings", to: "/dashboard/settings" as const },
   { icon: HelpCircle, label: "Help", to: "/dashboard/settings" as const },

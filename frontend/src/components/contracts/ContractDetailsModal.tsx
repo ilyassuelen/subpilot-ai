@@ -30,6 +30,11 @@ function formatDate(date: string | null) {
   }).format(new Date(date));
 }
 
+function formatComparisonScope(scope: string) {
+  if (scope === "same_category") return "Other providers in same category";
+  return "Only this provider";
+}
+
 type ContractDetailsModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -47,7 +52,7 @@ export function ContractDetailsModal({
 }: ContractDetailsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         {contract && (
           <>
             <DialogHeader>
@@ -63,7 +68,9 @@ export function ContractDetailsModal({
               <div className="grid grid-cols-2 gap-3">
                 {[
                   ["Provider", contract.provider_name],
+                  ["Plan", contract.plan_name || "-"],
                   ["Category", contract.category],
+                  ["AI Search", formatComparisonScope(contract.comparison_scope)],
                   [
                     "Cost per Billing Cycle",
                     formatCurrency(contract.monthly_cost, contract.currency),
@@ -86,6 +93,27 @@ export function ContractDetailsModal({
                   </div>
                 ))}
               </div>
+
+              {contract.comparison_attributes.length > 0 && (
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <div className="text-[10px] text-muted-foreground">
+                    Important details for AI savings
+                  </div>
+                  <div className="mt-2 space-y-2">
+                    {contract.comparison_attributes.map((attribute) => (
+                      <div
+                        key={attribute.key}
+                        className="flex items-center justify-between rounded-lg bg-background/70 px-3 py-2 text-sm"
+                      >
+                        <span className="font-medium">{attribute.label}</span>
+                        <span className="text-muted-foreground">
+                          {attribute.value} {attribute.unit ?? ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <Button

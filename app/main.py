@@ -16,9 +16,9 @@ from app.routers import (
     cancellations,
     contracts,
     dashboard,
-    reminders,
     notification_settings,
     notifications,
+    reminders,
     savings_insights,
 )
 from app.routers.auth import router as auth_router

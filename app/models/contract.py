@@ -1,13 +1,14 @@
-from datetime import datetime, date
+from datetime import date, datetime
 
-from sqlalchemy import String, Float, Integer, Date, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, JSON, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
 
 class Contract(Base):
-    """Represents a contract or subscription with billing and cancellation details."""
+    """Represents a contract or subscription with generic comparison attributes."""
+
     __tablename__ = "contracts"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -20,6 +21,7 @@ class Contract(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     provider_name: Mapped[str] = mapped_column(String(255), nullable=False)
     provider_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    plan_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     contract_type: Mapped[str] = mapped_column(String(100), nullable=False, default="subscription")
     monthly_cost: Mapped[float] = mapped_column(Float, nullable=False)
@@ -31,6 +33,7 @@ class Contract(Base):
     cancellation_notice_days: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    comparison_attributes: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="contracts")
@@ -38,5 +41,5 @@ class Contract(Base):
     cancellations = relationship(
         "CancellationRequest",
         back_populates="contract",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )

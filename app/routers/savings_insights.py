@@ -36,5 +36,5 @@ def refresh_my_savings_insights(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Force a fresh Smart Savings Agent analysis for the current user."""
+    """Force a fresh Smart Savings Agent research run for the current user."""
     return refresh_savings_insights_for_user(db, current_user.id)

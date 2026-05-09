@@ -1,20 +1,18 @@
 import {
   ArrowRight,
+  BellRing,
   BrainCircuit,
+  ClipboardCheck,
+  Info,
   PiggyBank,
   Sparkles,
-  AlertTriangle,
   TrendingDown,
-  RefreshCw,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useRefreshSavingsInsights,
-  useSavingsInsights,
-} from "@/hooks/useSavingsInsights";
+import { useSavingsInsights } from "@/hooks/useSavingsInsights";
 import type { SavingsInsight } from "@/lib/types";
 
 function formatCurrency(
@@ -37,13 +35,11 @@ function getPriorityClasses(priority: string) {
 function getActionLabel(action: string) {
   switch (action) {
     case "generate_cancellation_draft":
-      return "Generate Cancellation Draft";
-    case "compare_alternatives":
-      return "Compare Alternatives";
-    case "renegotiate_contract":
-      return "Review / Renegotiate";
-    default:
+      return "Prepare Cancellation";
+    case "review_contract":
       return "Review Contract";
+    default:
+      return "Open Contract";
   }
 }
 
@@ -56,17 +52,16 @@ function getActionTarget(action: string) {
 }
 
 function getInsightIcon(type: string) {
-  if (type === "upcoming_cancellation_window") return AlertTriangle;
-  if (type === "cost_optimization") return TrendingDown;
-  return BrainCircuit;
+  if (type === "upcoming_cancellation_window") return BellRing;
+  if (type === "plan_review") return TrendingDown;
+  if (type === "auto_renewal_review") return ClipboardCheck;
+  if (type === "category_overlap") return BrainCircuit;
+  return Info;
 }
 
 export function SavingsPage() {
   const { data, isLoading, error } = useSavingsInsights();
-  const refreshSavingsInsights = useRefreshSavingsInsights();
-
   const insights: SavingsInsight[] = data?.insights ?? [];
-  const isRefreshing = refreshSavingsInsights.isPending;
 
   return (
     <div className="space-y-6">
@@ -74,51 +69,30 @@ export function SavingsPage() {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <Sparkles className="h-3.5 w-3.5" />
-            Smart Savings Agent
+            Smart Contract Insights
           </div>
 
           <h1 className="font-[var(--font-display)] text-2xl font-bold">
-            AI Savings Recommendations
+            Smart Insights
           </h1>
 
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            SubPilot analyzes your active contracts and identifies opportunities
-            to reduce recurring costs, review expensive plans, or take action
-            before cancellation windows close.
+            SubPilot reviews your active contracts for renewal risks, expensive plans,
+            missing details and optimization opportunities based on your own contract data.
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={isLoading || isRefreshing}
-            onClick={() => refreshSavingsInsights.mutate()}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            {isRefreshing ? "Refreshing..." : "Refresh analysis"}
-          </Button>
-
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/dashboard/contracts">
-              Review Contracts
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <Button variant="hero" size="sm" asChild>
+          <Link to="/dashboard/contracts">
+            Review Contracts
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       </div>
 
       {error && (
         <div className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
-          Failed to load savings recommendations.
-        </div>
-      )}
-
-      {refreshSavingsInsights.error && (
-        <div className="rounded-xl bg-destructive/10 p-4 text-sm text-destructive">
-          Failed to refresh savings analysis.
+          Failed to load contract insights.
         </div>
       )}
 
@@ -126,10 +100,10 @@ export function SavingsPage() {
         <div className="rounded-2xl border border-border/50 bg-card p-5 shadow-card">
           <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
             <PiggyBank className="h-4 w-4 text-primary" />
-            Potential Monthly Saving
+            Potential Optimization
           </div>
 
-          {isLoading || isRefreshing ? (
+          {isLoading ? (
             <Skeleton className="h-9 w-28" />
           ) : (
             <div className="font-[var(--font-display)] text-3xl font-bold text-primary">
@@ -138,16 +112,16 @@ export function SavingsPage() {
           )}
 
           <p className="mt-1 text-xs text-muted-foreground">
-            Estimated by the Smart Savings Agent
+            Conservative estimate, not a guaranteed market price
           </p>
         </div>
 
         <div className="rounded-2xl border border-border/50 bg-card p-5 shadow-card">
           <div className="mb-2 text-xs text-muted-foreground">
-            Current Monthly Cost
+            Active Monthly Cost
           </div>
 
-          {isLoading || isRefreshing ? (
+          {isLoading ? (
             <Skeleton className="h-9 w-28" />
           ) : (
             <div className="font-[var(--font-display)] text-3xl font-bold">
@@ -161,11 +135,9 @@ export function SavingsPage() {
         </div>
 
         <div className="rounded-2xl border border-border/50 bg-card p-5 shadow-card">
-          <div className="mb-2 text-xs text-muted-foreground">
-            Recommendations
-          </div>
+          <div className="mb-2 text-xs text-muted-foreground">Insights</div>
 
-          {isLoading || isRefreshing ? (
+          {isLoading ? (
             <Skeleton className="h-9 w-20" />
           ) : (
             <div className="font-[var(--font-display)] text-3xl font-bold">
@@ -174,12 +146,12 @@ export function SavingsPage() {
           )}
 
           <p className="mt-1 text-xs text-muted-foreground">
-            AI-generated actions to review
+            Suggested actions to review
           </p>
         </div>
       </div>
 
-      {isLoading || isRefreshing ? (
+      {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <Skeleton key={index} className="h-40 w-full rounded-2xl" />
@@ -187,12 +159,10 @@ export function SavingsPage() {
         </div>
       ) : insights.length === 0 ? (
         <div className="rounded-2xl border border-border/50 bg-card p-10 text-center shadow-card">
-          <h2 className="text-lg font-semibold">
-            No savings recommendations yet
-          </h2>
+          <h2 className="text-lg font-semibold">No contract insights yet</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            Add more active contracts or subscriptions so the Smart Savings
-            Agent can analyze your recurring costs.
+            Add active contracts with costs, dates and useful notes so SubPilot can
+            identify review opportunities.
           </p>
         </div>
       ) : (
@@ -202,7 +172,7 @@ export function SavingsPage() {
 
             return (
               <div
-                key={insight.id ?? `${insight.contract_id}-${insight.title}`}
+                key={`${insight.contract_id}-${insight.type}-${insight.title}`}
                 className="rounded-2xl border border-border/50 bg-card p-6 shadow-card transition-all hover:shadow-card-hover"
               >
                 <div className="flex items-start justify-between gap-4">
@@ -232,23 +202,25 @@ export function SavingsPage() {
                     </div>
                   </div>
 
-                  <div className="hidden shrink-0 text-right sm:block">
-                    <div className="text-xs text-muted-foreground">
-                      Potential saving
+                  {insight.estimated_monthly_saving > 0 && (
+                    <div className="hidden shrink-0 text-right sm:block">
+                      <div className="text-xs text-muted-foreground">
+                        Estimated potential
+                      </div>
+                      <div className="font-[var(--font-display)] text-xl font-bold text-primary">
+                        {formatCurrency(insight.estimated_monthly_saving)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">per month</div>
                     </div>
-                    <div className="font-[var(--font-display)] text-xl font-bold text-primary">
-                      {formatCurrency(insight.estimated_monthly_saving)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      per month
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-4">
-                  <div className="text-sm font-semibold text-primary sm:hidden">
-                    {formatCurrency(insight.estimated_monthly_saving)} / month
-                  </div>
+                  {insight.estimated_monthly_saving > 0 && (
+                    <div className="text-sm font-semibold text-primary sm:hidden">
+                      {formatCurrency(insight.estimated_monthly_saving)} / month
+                    </div>
+                  )}
 
                   <div className="text-xs text-muted-foreground">
                     Action type: {insight.action.replaceAll("_", " ")}

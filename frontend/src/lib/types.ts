@@ -9,11 +9,19 @@ export type BillingCycle = "weekly" | "monthly" | "quarterly" | "yearly";
 
 export type ContractStatus = "active" | "cancelled";
 
+export type ComparisonAttribute = {
+  key?: string | null;
+  label: string;
+  value: string;
+  unit?: string | null;
+};
+
 export type Contract = {
   id: number;
   title: string;
   provider_name: string;
   provider_email: string | null;
+  plan_name: string | null;
   category: string;
   contract_type: ContractType;
   monthly_cost: number;
@@ -28,6 +36,7 @@ export type Contract = {
   urgency_status: string;
   status: ContractStatus;
   notes: string | null;
+  comparison_attributes: ComparisonAttribute[];
   created_at: string;
 };
 
@@ -35,6 +44,7 @@ export type ContractCreateRequest = {
   title: string;
   provider_name: string;
   provider_email?: string | null;
+  plan_name?: string | null;
   category: string;
   contract_type: ContractType;
   monthly_cost: number;
@@ -46,6 +56,7 @@ export type ContractCreateRequest = {
   cancellation_notice_days: number;
   status: ContractStatus;
   notes?: string | null;
+  comparison_attributes?: ComparisonAttribute[];
 };
 
 export type Reminder = {
@@ -118,10 +129,6 @@ export type CancellationGenerateRequest = {
   provider_address?: string | null;
 };
 
-/* =========================
-   Auth / Users
-   ========================= */
-
 export type RegisterRequest = {
   full_name: string;
   email: string;
@@ -173,10 +180,6 @@ export type NotificationSettingsUpdateRequest = {
   telegram_chat_id?: string | null;
 };
 
-/* =========================
-   Smart Savings Insights
-   ========================= */
-
 export type SavingsInsight = {
   id: number | null;
   type: string;
@@ -186,16 +189,8 @@ export type SavingsInsight = {
   estimated_monthly_saving: number;
   contract_id: number | null;
   action: string;
-
-  current_monthly_cost: number | null;
-  option_provider: string | null;
-  option_plan: string | null;
-  option_price: number | null;
-  option_currency: string | null;
-
   source_name: string | null;
   source_url: string | null;
-
   created_at: string | null;
   refreshed_at: string | null;
 };
